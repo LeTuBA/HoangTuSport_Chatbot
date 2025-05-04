@@ -2,6 +2,9 @@ from sqlmodel import SQLModel, create_engine, Session
 from app.core.config import settings
 import logging
 import time
+import sqlalchemy as sa
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,7 @@ logger.info(f"Connecting to database at {DATABASE_URL.split('@')[0].split('://')
 # Các tham số pool được truyền riêng biệt thay vì trong URL
 engine = create_engine(
     DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=False,  # Tắt echo logging của SQLAlchemy
     pool_size=5,
     max_overflow=10,
     pool_timeout=30,
@@ -41,6 +44,24 @@ def create_db_and_tables():
             logger.info("Tạo các bảng SQL...")
             SQLModel.metadata.create_all(engine)
             logger.info("Các bảng đã được tạo thành công!")
+            
+            # Kiểm tra và cập nhật định dạng cột content nếu cần
+            try:
+                with Session(engine) as session:
+                    # Với MySQL, thay đổi kiểu dữ liệu của các cột có vấn đề
+                    if "mysql" in DATABASE_URL:
+                        # Thay đổi kiểu dữ liệu của content trong bảng message
+                        session.execute(text("ALTER TABLE message MODIFY COLUMN content TEXT"))
+                        # Thay đổi kiểu dữ liệu của meta_data trong bảng message
+                        session.execute(text("ALTER TABLE message MODIFY COLUMN meta_data TEXT"))
+                        # Thay đổi kiểu dữ liệu của meta_data trong bảng conversation
+                        session.execute(text("ALTER TABLE conversation MODIFY COLUMN meta_data TEXT"))
+                        session.commit()
+                        logger.info("Đã cập nhật cấu trúc các bảng thành công!")
+            except (OperationalError, ProgrammingError) as e:
+                # Bỏ qua lỗi nếu cột đã là TEXT 
+                logger.warning(f"Lưu ý khi cập nhật cấu trúc bảng: {str(e)}")
+            
             break
         except Exception as e:
             retry_count += 1

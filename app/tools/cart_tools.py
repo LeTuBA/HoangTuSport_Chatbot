@@ -2,21 +2,21 @@ from typing import Dict, Any, List, Optional
 from agents import function_tool
 from ..client.spring_client import spring_boot_client
 
-@function_tool("Thêm sản phẩm vào giỏ hàng")
-def add_to_cart(product_id: str, quantity: int) -> Dict[str, Any]:
+@function_tool
+def add_to_cart(product_id: str, quantity: int = None) -> Dict[str, Any]:
     """
     Thêm sản phẩm vào giỏ hàng.
     
     Args:
         product_id: ID của sản phẩm cần thêm vào giỏ hàng
-        quantity: Số lượng sản phẩm
+        quantity: Số lượng sản phẩm (mặc định là 1)
         
     Returns:
         Dict: Thông tin giỏ hàng sau khi thêm sản phẩm
     """
     try:
         # Nếu quantity không được chỉ định hoặc <= 0, mặc định là 1
-        if not quantity or quantity <= 0:
+        if quantity is None or quantity <= 0:
             quantity = 1
             
         print(f"Thêm sản phẩm vào giỏ hàng: product_id={product_id}, quantity={quantity}")
@@ -36,7 +36,7 @@ def add_to_cart(product_id: str, quantity: int) -> Dict[str, Any]:
         print(error_msg)
         return {"success": False, "message": error_msg}
 
-@function_tool("Cập nhật số lượng sản phẩm trong giỏ hàng")
+@function_tool
 def update_cart(product_id: str, quantity: int) -> Dict[str, Any]:
     """
     Cập nhật số lượng sản phẩm trong giỏ hàng.
@@ -59,7 +59,7 @@ def update_cart(product_id: str, quantity: int) -> Dict[str, Any]:
         print(error_msg)
         return {"success": False, "message": error_msg}
 
-@function_tool("Xóa sản phẩm khỏi giỏ hàng")
+@function_tool
 def remove_from_cart(product_id: str) -> Dict[str, Any]:
     """
     Xóa sản phẩm khỏi giỏ hàng.
@@ -81,7 +81,7 @@ def remove_from_cart(product_id: str) -> Dict[str, Any]:
         print(error_msg)
         return {"success": False, "message": error_msg}
 
-@function_tool("Lấy thông tin giỏ hàng hiện tại")
+@function_tool
 def get_cart() -> Dict[str, Any]:
     """
     Lấy thông tin giỏ hàng hiện tại của người dùng
@@ -98,7 +98,7 @@ def get_cart() -> Dict[str, Any]:
         print(f"Lỗi khi lấy thông tin giỏ hàng: {str(e)}")
         return {"items": [], "total": 0}
 
-@function_tool("Xóa toàn bộ giỏ hàng")
+@function_tool
 def clear_cart() -> Dict[str, Any]:
     """
     Xóa toàn bộ giỏ hàng.
@@ -116,7 +116,7 @@ def clear_cart() -> Dict[str, Any]:
         print(error_msg)
         return {"success": False, "message": error_msg}
 
-@function_tool("Tạo đơn hàng mới")
+@function_tool
 def create_order(payment_method: str, phone: str, address: str) -> Dict[str, Any]:
     """
     Tạo đơn hàng mới với thông tin thanh toán
@@ -160,7 +160,7 @@ def create_order(payment_method: str, phone: str, address: str) -> Dict[str, Any
             "success": False
         }
 
-@function_tool("Lấy thông tin chi tiết đơn hàng")
+@function_tool
 def get_order_info(order_id: str) -> Dict[str, Any]:
     """
     Lấy thông tin chi tiết của một đơn hàng
@@ -192,7 +192,7 @@ def get_order_info(order_id: str) -> Dict[str, Any]:
             "success": False
         }
 
-@function_tool("Lấy thông tin thanh toán đơn hàng")
+@function_tool
 def get_payment_info(order_id: str) -> Dict[str, Any]:
     """
     Lấy thông tin thanh toán của một đơn hàng
@@ -222,7 +222,7 @@ def get_payment_info(order_id: str) -> Dict[str, Any]:
             "success": False
         }
 
-@function_tool("Lấy danh sách đơn hàng của tôi")
+@function_tool
 def get_my_orders() -> List[Dict[str, Any]]:
     """
     Lấy danh sách đơn hàng của người dùng hiện tại

@@ -1,7 +1,7 @@
-from agents import Agent, Tool, Runner
+from agents import Agent, Runner, function_tool
 from ..core.config import settings
 from ..tools.cart_tools import add_to_cart, update_cart, remove_from_cart, get_cart, clear_cart
-from ..tools.product_tools import get_product_info, get_product_by_id
+from ..tools.product_tools import product_search, product_details
 from ..prompts.cart_agent import CART_AGENT_PROMPT
 from ..core.hooks import CustomAgentHooks
 from typing import List, Dict, Any
@@ -22,8 +22,8 @@ class CartAgentWrapper:
             instructions=CART_AGENT_PROMPT,
             model=settings.CHAT_MODEL,
             tools=[
-                get_product_info,
-                get_product_by_id,
+                product_search,
+                product_details,
                 add_to_cart,
                 update_cart,
                 remove_from_cart,
@@ -43,46 +43,22 @@ class CartAgentWrapper:
         Returns:
             List[Dict]: Danh sách thông tin sản phẩm
         """
-        source_documents = []
-        try:
-            # Kiểm tra xem trong kết quả có chứa thông tin sản phẩm không
-            if hasattr(result, 'tool_results') and result.tool_results:
-                for tool_result in result.tool_results:
-                    # Chỉ xử lý kết quả từ các tool liên quan đến sản phẩm
-                    if tool_result.tool_name in ['get_product_info', 'get_product_by_id']:
-                        # Parse kết quả JSON từ tool
-                        if isinstance(tool_result.output, str):
-                            try:
-                                products = json.loads(tool_result.output)
-                            except:
-                                continue
-                        else:
-                            products = tool_result.output
-                            
-                        # Xử lý trường hợp kết quả là một list hoặc dict
-                        if isinstance(products, dict):
-                            products = [products]
-                        elif not isinstance(products, list):
-                            continue
-                            
-                        # Thêm từng sản phẩm vào source_documents
-                        for product in products:
-                            if isinstance(product, dict):
-                                source_documents.append({
-                                    "id": product.get("id", ""),
-                                    "name": product.get("name", ""),
-                                    "price": product.get("price", 0),
-                                    "description": product.get("description", ""),
-                                    "image_url": product.get("image_url", ""),
-                                    "category": product.get("category", ""),
-                                    "status": product.get("status", ""),
-                                    "quantity": product.get("quantity", 0),
-                                    "relevance_score": product.get("relevance_score", 0)
-                                })
-        except Exception as e:
-            print(f"Error extracting products: {str(e)}")
-            
-        return source_documents
+        products = []
+        
+        # Lấy sản phẩm từ kết quả tool search_products và get_product_details
+        if hasattr(result, 'tool_calls'):
+            for tool_call in result.tool_calls:
+                if tool_call.name in ['product_search', 'product_details'] and tool_call.output:
+                    try:
+                        product_data = json.loads(tool_call.output)
+                        if isinstance(product_data, list):
+                            products.extend(product_data)
+                        elif isinstance(product_data, dict):
+                            products.append(product_data)
+                    except:
+                        pass
+                        
+        return products
     
     async def process(self, message: str, thread_id: str = None, user_id: str = None, auth_token: str = None):
         """

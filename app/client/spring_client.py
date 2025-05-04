@@ -3,6 +3,7 @@ import random
 import json
 from typing import Dict, List, Any, Optional
 from ..core.config import settings
+import traceback
 
 class SpringBootClient:
     """
@@ -13,7 +14,12 @@ class SpringBootClient:
         self.headers = {
             "Content-Type": "application/json"
         }
-        # Thêm token nếu được cung cấp
+        
+        # Thêm Spring Boot API token vào headers nếu được cấu hình
+        if settings.SPRING_BOOT_TOKEN:
+            self.headers["Authorization"] = f"Bearer {settings.SPRING_BOOT_TOKEN}"
+        
+        # Thêm token người dùng nếu được cung cấp (ưu tiên cao hơn SPRING_BOOT_TOKEN)
         if auth_token:
             self.headers["Authorization"] = auth_token if auth_token.startswith("Bearer ") else f"Bearer {auth_token}"
     
@@ -21,6 +27,9 @@ class SpringBootClient:
         """Cập nhật token xác thực"""
         if auth_token:
             self.headers["Authorization"] = auth_token if auth_token.startswith("Bearer ") else f"Bearer {auth_token}"
+        elif settings.SPRING_BOOT_TOKEN:
+            # Nếu không có token người dùng, dùng lại SPRING_BOOT_TOKEN
+            self.headers["Authorization"] = f"Bearer {settings.SPRING_BOOT_TOKEN}"
         elif "Authorization" in self.headers:
             del self.headers["Authorization"]
     
@@ -36,17 +45,43 @@ class SpringBootClient:
         """
         url = f"{self.base_url}/api/v1/products"
         params = {"page": 1, "size": limit}
-        response = requests.get(url, params=params, headers=self.headers)
         
-        if response.status_code == 200:
-            # Truy cập theo cấu trúc chính xác của API
-            json_data = response.json()
-            if json_data and "data" in json_data and "result" in json_data["data"]:
-                return json_data["data"]["result"]
+        # Đảm bảo có token trong header
+        if "Authorization" not in self.headers and settings.SPRING_BOOT_TOKEN:
+            self.headers["Authorization"] = f"Bearer {settings.SPRING_BOOT_TOKEN}"
+        
+        print(f"[SPRING-CLIENT] Đang lấy dữ liệu sản phẩm từ: {url}")
+        print(f"[SPRING-CLIENT] Params: {params}")
+        print(f"[SPRING-CLIENT] Headers: {self.headers}")
+        
+        try:
+            response = requests.get(url, params=params, headers=self.headers, timeout=10)
+            
+            print(f"[SPRING-CLIENT] Status code: {response.status_code}")
+            
+            if response.status_code == 200:
+                # Hiển thị một phần của response text để debug
+                response_preview = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                print(f"[SPRING-CLIENT] Response preview: {response_preview}")
+                
+                # Truy cập theo cấu trúc chính xác của API
+                json_data = response.json()
+                if json_data and "data" in json_data and "result" in json_data["data"]:
+                    products = json_data["data"]["result"]
+                    print(f"[SPRING-CLIENT] Lấy được {len(products)} sản phẩm")
+                    return products
+                else:
+                    print(f"[SPRING-CLIENT] Cấu trúc JSON không như mong đợi: {json_data}")
+                    return []
             else:
-                print(f"Cấu trúc JSON không như mong đợi: {json_data}")
+                print(f"[SPRING-CLIENT] Lỗi khi lấy dữ liệu sản phẩm: HTTP {response.status_code}")
+                print(f"[SPRING-CLIENT] Response error: {response.text}")
                 return []
-        return []
+                
+        except Exception as e:
+            print(f"[SPRING-CLIENT] Exception khi lấy dữ liệu sản phẩm: {str(e)}")
+            traceback.print_exc()
+            return []
     
     def get_product_by_id(self, product_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -65,17 +100,6 @@ class SpringBootClient:
         return None
     
     def search_products(self, query: str, page: int = 1, size: int = 10) -> List[Dict[str, Any]]:
-        """
-        Tìm kiếm sản phẩm sử dụng Spring Filter
-        
-        Args:
-            query: Query filter (ví dụ: name~'Passion' hoặc price>100000)
-            page: Trang (mặc định là 1)
-            size: Số lượng sản phẩm mỗi trang (mặc định là 10)
-            
-        Returns:
-            Danh sách sản phẩm phù hợp với filter
-        """
         url = f"{self.base_url}/api/v1/products"
         params = {
             "page": page,
@@ -140,9 +164,9 @@ class SpringBootClient:
         """
         filters = []
         if min_price is not None:
-            filters.append(f"price>:{min_price}")
+            filters.append(f"sellPrice>:{min_price}")
         if max_price is not None:
-            filters.append(f"price<:{max_price}")
+            filters.append(f"sellPrice<:{max_price}")
             
         filter_query = " and ".join(filters) if filters else None
         return self.search_products(filter_query)
@@ -381,6 +405,42 @@ class SpringBootClient:
             if json_data and "result" in json_data:
                 return json_data["result"]
         return []
+    
+    def get_all_suppliers(self, limit: int = 100):
+        """
+        Lấy danh sách tất cả nhà cung cấp từ Spring Boot API
+        """
+        try:
+            url = f"{self.base_url}/api/v1/suppliers?limit={limit}"
+            
+            # Đảm bảo có token trong header
+            if "Authorization" not in self.headers and settings.SPRING_BOOT_TOKEN:
+                self.headers["Authorization"] = f"Bearer {settings.SPRING_BOOT_TOKEN}"
+            
+            print(f"[SPRING-CLIENT] Đang lấy dữ liệu nhà cung cấp từ: {url}")
+            print(f"[SPRING-CLIENT] Headers: {self.headers}")
+            
+            response = requests.get(url, headers=self.headers, timeout=10)
+            
+            print(f"[SPRING-CLIENT] Status code: {response.status_code}")
+            
+            if response.status_code == 200:
+                # Truy cập theo cấu trúc chính xác của API
+                json_data = response.json()
+                if json_data and "data" in json_data and "result" in json_data["data"]:
+                    suppliers = json_data["data"]["result"]
+                    print(f"[SPRING-CLIENT] Lấy được {len(suppliers)} nhà cung cấp")
+                    return suppliers
+                else:
+                    print(f"[SPRING-CLIENT] Cấu trúc JSON không như mong đợi: {json_data}")
+                    return []
+            else:
+                print(f"[SPRING-CLIENT] Lỗi khi lấy danh sách nhà cung cấp: {response.status_code} - {response.text}")
+                return []
+        except Exception as e:
+            print(f"[SPRING-CLIENT] Lỗi exception khi lấy danh sách nhà cung cấp: {str(e)}")
+            traceback.print_exc()
+            return []
 
 # Singleton instance
 spring_boot_client = SpringBootClient() 

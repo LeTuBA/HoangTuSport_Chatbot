@@ -1,8 +1,8 @@
-from typing import List, Dict, Any
-from agents import function_tool
+from typing import List, Dict, Any, Optional
+from ..rag.vector_store import vector_store
 from ..client.spring_client import spring_boot_client
+from agents import function_tool
 
-@function_tool("Tìm kiếm thông tin sản phẩm")
 def get_product_info(query: str) -> List[Dict]:
     """
     Tìm kiếm thông tin sản phẩm sử dụng Spring Filter
@@ -15,7 +15,6 @@ def get_product_info(query: str) -> List[Dict]:
     """
     return spring_boot_client.search_products(query)
 
-@function_tool("Lấy thông tin sản phẩm theo ID")
 def get_product_by_id(product_id: str) -> Dict:
     """
     Lấy thông tin sản phẩm theo ID
@@ -29,7 +28,6 @@ def get_product_by_id(product_id: str) -> Dict:
     result = spring_boot_client.get_product_by_id(product_id)
     return result if result else {}
 
-@function_tool("Lấy danh sách sản phẩm theo danh mục")
 def get_products_by_category(category_id: str) -> List[Dict]:
     """
     Lấy danh sách sản phẩm theo danh mục sử dụng Spring Filter
@@ -65,7 +63,6 @@ def get_products_by_category(category_id: str) -> List[Dict]:
         print(f"Lỗi trong get_products_by_category: {str(e)}")
         return []
 
-@function_tool("Tìm kiếm sản phẩm theo khoảng giá")
 def search_products_by_price_range(min_price: float = None, max_price: float = None) -> List[Dict]:
     """
     Tìm kiếm sản phẩm theo khoảng giá sử dụng Spring Filter
@@ -79,7 +76,6 @@ def search_products_by_price_range(min_price: float = None, max_price: float = N
     """
     return spring_boot_client.get_products_by_price_range(min_price, max_price)
 
-@function_tool("So sánh thông tin các sản phẩm")
 def compare_products(product_ids: List[str]) -> List[Dict]:
     """
     So sánh thông tin của nhiều sản phẩm
@@ -95,4 +91,49 @@ def compare_products(product_ids: List[str]) -> List[Dict]:
         product = spring_boot_client.get_product_by_id(product_id)
         if product:
             products.append(product)
-    return products 
+    return products
+
+@function_tool
+def product_search(query: str, top_k: int = None) -> List[Dict[str, Any]]:
+    """
+    Tìm kiếm sản phẩm trong vector store
+    
+    Args:
+        query: Câu truy vấn tìm kiếm
+        top_k: Số lượng kết quả trả về (mặc định là 5)
+        
+    Returns:
+        Danh sách sản phẩm phù hợp với truy vấn
+    """
+    try:
+        # Xử lý giá trị mặc định cho top_k bên trong thân hàm
+        if top_k is None:
+            top_k = 5
+            
+        # Thử sử dụng vector store (Milvus) để tìm kiếm
+        results = vector_store.search(query, top_k=top_k)
+        
+        # Nếu không tìm thấy kết quả hoặc có lỗi, thử tìm kiếm qua API
+        if not results:
+            print("Không tìm thấy kết quả từ vector store, chuyển sang tìm kiếm qua API")
+            results = spring_boot_client.search_products(f"name~'{query}' or description~'{query}'")
+            
+        return results
+    except Exception as e:
+        print(f"Lỗi khi tìm kiếm sản phẩm: {str(e)}")
+        # Fallback sang tìm kiếm qua API
+        return spring_boot_client.search_products(f"name~'{query}' or description~'{query}'")
+
+@function_tool
+def product_details(product_id: str) -> Dict[str, Any]:
+    """
+    Lấy thông tin chi tiết của sản phẩm từ API
+    
+    Args:
+        product_id: ID của sản phẩm cần lấy thông tin
+        
+    Returns:
+        Thông tin chi tiết sản phẩm hoặc dict rỗng nếu không tìm thấy
+    """
+    result = spring_boot_client.get_product_by_id(product_id)
+    return result if result else {} 

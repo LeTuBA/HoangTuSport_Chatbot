@@ -7,8 +7,8 @@ import logging
 from dotenv import load_dotenv
 from app.core.config import settings
 
-# Load environment variables
-load_dotenv()
+# Không cần load_dotenv() ở đây nữa vì đã được load trong config.py
+# load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -16,6 +16,12 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Vô hiệu hóa log của SQLAlchemy
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
 
 # Application lifecycle events
 @asynccontextmanager

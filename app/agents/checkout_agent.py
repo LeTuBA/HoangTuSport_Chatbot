@@ -1,4 +1,4 @@
-from agents import Agent, Tool, Runner
+from agents import Agent, Runner, function_tool
 from ..core.config import settings
 from ..tools.cart_tools import (
     get_cart, create_order, get_order_info, 
@@ -9,6 +9,48 @@ from ..prompts.checkout_agent import CHECKOUT_AGENT_PROMPT
 from ..core.hooks import CustomAgentHooks
 from ..client.spring_client import spring_boot_client
 from typing import List, Dict, Any, Optional
+import json
+
+@function_tool
+def get_product_details(product_id: str) -> str:
+    """
+    Lấy thông tin chi tiết của sản phẩm
+    
+    Args:
+        product_id: ID của sản phẩm
+    """
+    result = get_product_by_id(product_id)
+    return json.dumps(result)
+
+@function_tool
+def get_order_details(order_id: str) -> str:
+    """
+    Lấy thông tin chi tiết của đơn hàng
+    
+    Args:
+        order_id: ID của đơn hàng
+    """
+    result = get_order_info(order_id)
+    return json.dumps(result)
+
+@function_tool
+def get_payment_details(order_id: str) -> str:
+    """
+    Lấy thông tin thanh toán của đơn hàng
+    
+    Args:
+        order_id: ID của đơn hàng
+    """
+    result = get_payment_info(order_id)
+    return json.dumps(result)
+
+@function_tool
+def list_my_orders() -> str:
+    """
+    Lấy danh sách đơn hàng của người dùng
+    """
+    result = get_my_orders()
+    return json.dumps(result)
 
 class CheckoutAgentWrapper:
     """
@@ -24,12 +66,12 @@ class CheckoutAgentWrapper:
             instructions=CHECKOUT_AGENT_PROMPT,
             model=settings.CHAT_MODEL,
             tools=[
-                get_cart,           # Lấy thông tin giỏ hàng
-                get_product_by_id,  # Lấy thông tin sản phẩm
-                create_order,       # Tạo đơn hàng
-                get_order_info,     # Lấy thông tin đơn hàng
-                get_payment_info,   # Lấy thông tin thanh toán
-                get_my_orders      # Lấy danh sách đơn hàng của tôi
+                get_cart,             # Sử dụng trực tiếp get_cart từ cart_tools
+                get_product_details,  # Lấy thông tin sản phẩm
+                create_order,         # Sử dụng trực tiếp create_order từ cart_tools
+                get_order_details,    # Lấy thông tin đơn hàng
+                get_payment_details,  # Lấy thông tin thanh toán
+                list_my_orders       # Lấy danh sách đơn hàng của tôi
             ],
             hooks=self.hooks
         )
@@ -74,11 +116,15 @@ class CheckoutAgentWrapper:
         
         # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
         source_documents = []
-        if hasattr(result, 'tool_results'):
-            for tool_result in result.tool_results:
-                if tool_result.tool_name in ['create_order', 'get_order_info', 'get_payment_info']:
-                    if isinstance(tool_result.output, dict):
-                        source_documents.append(tool_result.output)
+        if hasattr(result, 'tool_calls'):
+            for tool_call in result.tool_calls:
+                if tool_call.name in ['create_order', 'get_order_details', 'get_payment_details']:
+                    try:
+                        order_data = json.loads(tool_call.output)
+                        if isinstance(order_data, dict):
+                            source_documents.append(order_data)
+                    except:
+                        pass
         
         return {
             "message": result.final_output,
@@ -148,11 +194,15 @@ class CheckoutAgentWrapper:
         
         # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
         source_documents = []
-        if hasattr(result, 'tool_results'):
-            for tool_result in result.tool_results:
-                if tool_result.tool_name in ['create_order', 'get_order_info', 'get_payment_info']:
-                    if isinstance(tool_result.output, dict):
-                        source_documents.append(tool_result.output)
+        if hasattr(result, 'tool_calls'):
+            for tool_call in result.tool_calls:
+                if tool_call.name in ['create_order', 'get_order_details', 'get_payment_details']:
+                    try:
+                        order_data = json.loads(tool_call.output)
+                        if isinstance(order_data, dict):
+                            source_documents.append(order_data)
+                    except:
+                        pass
         
         return {
             "message": result.final_output,

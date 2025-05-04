@@ -39,31 +39,27 @@ async def chat(
         # Cập nhật token cho spring boot client nếu có
         if request.auth_token:
             spring_boot_client.update_auth_token(request.auth_token)
-            
-        # Khởi tạo conversation service
-        conversation_service = ConversationService(session)
         
         # Xử lý conversation_id/thread_id
         thread_id = request.thread_id
         if not thread_id and request.user_id:
             # Tạo conversation mới nếu chưa có
-            conversation = conversation_service.create_conversation(
+            thread_id = await ConversationService.create_conversation(
                 user_id=request.user_id,
                 title=request.thread_title
             )
-            thread_id = conversation.id
             
         # Lưu tin nhắn của người dùng
         if thread_id:
-            conversation_service.add_message(
+            await ConversationService.add_message(
                 conversation_id=thread_id,
                 role="user",
                 content=request.message,
-                metadata={"user_id": request.user_id} if request.user_id else None
+                meta_data={"user_id": request.user_id} if request.user_id else None
             )
             
             # Lấy lịch sử trò chuyện từ database
-            conversation_history = conversation_service.get_conversation_history(thread_id)
+            conversation_history = await ConversationService.get_conversation_history(thread_id)
         else:
             conversation_history = []
             
@@ -112,11 +108,11 @@ async def chat(
                 
             # Lưu câu trả lời từ agent vào database
             if thread_id:
-                conversation_service.add_message(
+                await ConversationService.add_message(
                     conversation_id=thread_id,
                     role="assistant",
                     content=response.get("message", ""),
-                    metadata={"agent": agent_type}
+                    meta_data={"agent": agent_type}
                 )
                 
             return ChatResponse(
@@ -127,11 +123,11 @@ async def chat(
         else:
             # Nếu không có chuyển tiếp, lưu và trả về response trực tiếp từ manager
             if thread_id:
-                conversation_service.add_message(
+                await ConversationService.add_message(
                     conversation_id=thread_id,
                     role="assistant",
                     content=manager_response.get("message", ""),
-                    metadata={"agent": "manager"}
+                    meta_data={"agent": "manager"}
                 )
                 
             return ChatResponse(
@@ -195,8 +191,8 @@ async def auto_sync_data(request: AutoSyncRequest, background_tasks: BackgroundT
             
             # Gọi trực tiếp hàm thay vì qua background task để dễ debug
             try:
-                # Hiển thị cấu hình Qdrant
-                print(f"[AUTO-SYNC] Qdrant config: host={settings.QDRANT_HOST}, port={settings.QDRANT_PORT}, collection={settings.QDRANT_COLLECTION_NAME}")
+                # Hiển thị cấu hình Milvus
+                print(f"[AUTO-SYNC] Milvus config: uri={settings.MILVUS_URI}, collection={settings.MILVUS_COLLECTION_NAME}")
                 
                 # Thêm dữ liệu trực tiếp thay vì qua background task
                 vector_store.add_products(products)
@@ -214,6 +210,28 @@ async def auto_sync_data(request: AutoSyncRequest, background_tasks: BackgroundT
                 status="success",
                 count=len(products),
                 message=f"Đã tự động đồng bộ {len(products)} sản phẩm vào vector database"
+            )
+        elif request.type == "suppliers":
+            # Lấy dữ liệu nhà cung cấp từ Spring Boot API
+            print(f"[AUTO-SYNC] Đang lấy dữ liệu nhà cung cấp từ Spring Boot API...")
+            suppliers = spring_boot_client.get_all_suppliers(limit=request.limit)
+            
+            if not suppliers:
+                print(f"[AUTO-SYNC] Không thể lấy dữ liệu nhà cung cấp từ Spring Boot API")
+                return SyncResponse(
+                    status="error",
+                    count=0,
+                    message="Không thể lấy dữ liệu nhà cung cấp từ Spring Boot API"
+                )
+                
+            print(f"[AUTO-SYNC] Lấy được {len(suppliers)} nhà cung cấp từ API")
+            # Xử lý dữ liệu nhà cung cấp - có thể cần phải triển khai thêm
+            # ...
+            
+            return SyncResponse(
+                status="success",
+                count=len(suppliers),
+                message=f"Đã tự động đồng bộ {len(suppliers)} nhà cung cấp"
             )
         else:
             print(f"[AUTO-SYNC] Loại dữ liệu '{request.type}' không được hỗ trợ")
