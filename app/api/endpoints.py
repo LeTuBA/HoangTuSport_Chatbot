@@ -292,4 +292,60 @@ async def get_conversation_messages(conversation_id: str, limit: int = 50, sessi
             for msg in messages
         ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi lấy tin nhắn: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Lỗi lấy tin nhắn: {str(e)}")
+
+@router.get("/threads/{thread_id}/history")
+async def get_thread_history(
+    thread_id: str,
+    limit: int = 50,
+    session: Session = Depends(get_session)
+):
+    """
+    Lấy lịch sử trò chuyện dựa theo thread_id
+    
+    Parameters:
+    - thread_id: ID của thread (conversation) cần lấy lịch sử
+    - limit: Số lượng tin nhắn tối đa trả về (mặc định: 50)
+    
+    Returns:
+    - Danh sách tin nhắn trong cuộc trò chuyện
+    """
+    try:
+        # Kiểm tra xem conversation có tồn tại không
+        conversation = session.get(Conversation, thread_id)
+        if not conversation:
+            raise HTTPException(
+                status_code=404,
+                detail="Không tìm thấy cuộc trò chuyện với ID này"
+            )
+            
+        # Lấy lịch sử tin nhắn
+        messages_history = await ConversationService.get_conversation_history(thread_id)
+        
+        # Giới hạn số lượng tin nhắn trả về
+        if limit and limit > 0:
+            messages_history = messages_history[-limit:]
+            
+        # Chỉnh sửa định dạng trả về
+        formatted_messages = []
+        for msg in messages_history:
+            # Đổi tên trường meta_data thành metadata cho phù hợp
+            formatted_msg = {
+                "id": msg["id"],
+                "role": msg["role"],
+                "content": msg["content"],
+                "created_at": msg["created_at"],
+                "metadata": msg["meta_data"]  # Đổi tên trường
+            }
+            formatted_messages.append(formatted_msg)
+                
+        # Trả về mảng tin nhắn trực tiếp
+        return formatted_messages
+    except HTTPException:
+        # Re-raise HTTP exceptions để giữ nguyên status code
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi lấy lịch sử trò chuyện: {str(e)}"
+        ) 

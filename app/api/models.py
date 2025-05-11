@@ -57,4 +57,23 @@ class AutoSyncRequest(BaseModel):
     Request model cho API tự động đồng bộ dữ liệu từ Spring Boot
     """
     type: str = Field(..., description="Loại dữ liệu cần đồng bộ (products, categories)")
-    limit: Optional[int] = Field(100, description="Số lượng item tối đa cần đồng bộ") 
+    limit: Optional[int] = Field(100, description="Số lượng item tối đa cần đồng bộ")
+
+class MessageHistory(BaseModel):
+    """
+    Model đại diện cho một tin nhắn trong lịch sử trò chuyện
+    """
+    id: str = Field(..., description="ID của tin nhắn")
+    role: str = Field(..., description="Vai trò của người gửi (user/assistant)")
+    content: str = Field(..., description="Nội dung tin nhắn")
+    created_at: str = Field(..., description="Thời gian tạo tin nhắn")
+    meta_data: Optional[Dict[str, Any]] = Field({}, description="Metadata của tin nhắn")
+
+class ChatHistoryResponse(BaseModel):
+    """
+    Response model cho API lấy lịch sử trò chuyện
+    """
+    conversation_id: str = Field(..., description="ID của cuộc trò chuyện")
+    messages: List[MessageHistory] = Field(..., description="Danh sách tin nhắn trong cuộc trò chuyện")
+    user_id: Optional[str] = Field(None, description="ID của người dùng sở hữu cuộc trò chuyện")
+    title: Optional[str] = Field(None, description="Tiêu đề của cuộc trò chuyện") 
