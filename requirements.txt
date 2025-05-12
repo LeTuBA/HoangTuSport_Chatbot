@@ -1,12 +1,12 @@
 # Main dependencies
 fastapi
 langchain-milvus
-pymilvus >= 2.5.5
+pymilvus 
 uvicorn
 python-dotenv
 pydantic
 pydantic-settings
-openai>=1.30.0
+openai
 langchain
 langchain-openai
 langchain-community
@@ -18,9 +18,10 @@ cryptography
 sentence-transformers
 httpx
 pytest
+langchain-huggingface
 
 # OpenAI Agents
-openai-agents>=0.2.5
+openai-agents
 
 # Utility dependencies
 python-multipart
