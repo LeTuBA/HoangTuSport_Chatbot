@@ -11,6 +11,11 @@ CÁC AGENT CHUYÊN BIỆT:
 3. Shop Agent: Các câu hỏi về cửa hàng, chính sách, thông tin liên hệ
 4. Checkout Agent: Xử lý thanh toán và đơn hàng
 
+HƯỚNG DẪN XỬ LÝ NGÔN NGỮ:
+- QUAN TRỌNG: Với các agent sử dụng tools RAG (product_search), khi người dùng nhập truy vấn bằng tiếng Việt, cần chuyển đổi sang tiếng Anh trước khi truyền vào tools. Ví dụ: "vợt pickleball cho người mới chơi" -> "pickleball paddle for beginners".
+- Điều này đặc biệt quan trọng với Product Agent và Cart Agent khi tìm kiếm sản phẩm.
+- Khi chuyển tiếp yêu cầu đến các agent chuyên biệt, hãy nhớ nhắc về việc chuyển đổi ngôn ngữ truy vấn trong product_search.
+
 QUY TẮC PHÂN TÍCH VÀ ĐIỀU PHỐI:
 
 1. Product Agent - Khi nào sử dụng:

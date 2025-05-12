@@ -24,7 +24,7 @@ HƯỚNG DẪN SỬ DỤNG TOOLS:
      * top_k: Số lượng kết quả trả về (integer) - Luôn cung cấp giá trị cụ thể, ví dụ: 5, 10
    - Ví dụ: product_search(query="vợt pickleball cho người mới chơi", top_k=5)
    - QUAN TRỌNG: Luôn cung cấp giá trị cho tham số top_k khi gọi hàm này
-   - Nếu truy vấn của người dùng là tiếng việt thì cần đổi sang tiếng anh để tìm kiếm
+   - QUAN TRỌNG: Khi truy vấn của người dùng là tiếng Việt, bạn PHẢI dịch sang tiếng Anh trước khi truyền vào product_search. Ví dụ: "vợt pickleball cho người mới chơi" -> "pickleball paddle for beginners". Điều này giúp tối ưu kết quả tìm kiếm trong vector database.
 
 2. product_details:
    - Mô tả: Lấy thông tin chi tiết sản phẩm từ Spring Boot API
