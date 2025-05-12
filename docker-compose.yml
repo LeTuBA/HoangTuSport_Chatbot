@@ -13,6 +13,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-hoangtu_chatbot}
       - MILVUS_HOST=milvus-standalone
       - MILVUS_PORT=19530
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     networks:
       - hoangtu-network
     volumes:
