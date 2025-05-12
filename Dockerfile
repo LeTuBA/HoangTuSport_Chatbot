@@ -1,22 +1,23 @@
+# Use Python 3.11 slim as base image
 FROM python:3.10-slim
 
+# Set working directory
 WORKDIR /app
 
-# Cài đặt các dependencies
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Cài đặt các thư viện sentence transformers hỗ trợ tiếng Việt
-RUN pip install --no-cache-dir transformers[sentencepiece]
-
-# Copy toàn bộ mã nguồn
+# Copy application code
 COPY . .
 
-# Tạo thư mục lưu trữ vector database
-RUN mkdir -p data/vector_db
-
-# Expose cổng ứng dụng
+# Expose port
 EXPOSE 8000
 
-# Khởi động ứng dụng
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Command to run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
