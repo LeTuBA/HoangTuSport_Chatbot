@@ -167,7 +167,7 @@ class VectorStore:
                     # Tạo văn bản phong phú từ thông tin sản phẩm
                     product_text = f"Sản phẩm {product.get('name', '')} có mã sản phẩm {product.get('id', '')}. "
                     product_text += f"Mô tả: {product.get('description', '')}. "
-                    product_text += f"Giá bán: {product.get('sellPrice', product.get('price', 0))} VNĐ. "
+                    product_text += f"Giá bán: {product.get('sellPrice', product.get('price', 0))} $ (đô la Mỹ). "
                     
                     if product.get('quantity') is not None:
                         product_text += f"Số lượng tồn kho: {product.get('quantity')}. "
