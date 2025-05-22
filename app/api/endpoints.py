@@ -195,7 +195,7 @@ async def auto_sync_data(request: AutoSyncRequest, background_tasks: BackgroundT
                     return SyncResponse(
                         status="error",
                         count=0,
-                        message="Không thể xóa và tạo lại collection"
+                        message="Không thể xóa và tạo lại collection, đồng bộ dữ liệu thất bại"
                     )
                 print(f"[AUTO-SYNC] Đã xóa và tạo lại collection thành công, tiếp tục thêm dữ liệu mới")
             

@@ -146,12 +146,37 @@ class VectorStore:
             
             # Nếu tồn tại thì xóa
             if exists:
-                logger.info(f"Xóa collection '{self.collection_name}' hiện tại")
-                print(f"[MILVUS] Xóa collection '{self.collection_name}' hiện tại")
-                utility.drop_collection(self.collection_name)
+                try:
+                    logger.info(f"Xóa collection '{self.collection_name}' hiện tại")
+                    print(f"[MILVUS] Xóa collection '{self.collection_name}' hiện tại")
+                    utility.drop_collection(self.collection_name)
+                except Exception as e:
+                    # Ghi log lỗi nhưng không dừng lại
+                    logger.warning(f"Không thể xóa collection: {str(e)}")
+                    print(f"[MILVUS] Cảnh báo: Không thể xóa collection: {str(e)}")
+                    print(f"[MILVUS] Tiếp tục thử tạo lại collection mà không xóa")
             
-            # Tạo lại vector store và collection mới
+            # Dù xóa thành công hay không, vẫn thử tạo lại vector store
             connection_args = {"uri": self.uri}
+            
+            # Thử kết nối lại trước khi tạo collection mới
+            try:
+                # Đóng kết nối cũ nếu có
+                connections.disconnect(self.connection_name)
+                logger.info("Đã đóng kết nối cũ")
+                print("[MILVUS] Đã đóng kết nối cũ")
+            except:
+                # Bỏ qua lỗi nếu không thể đóng kết nối
+                pass
+                
+            # Kết nối lại
+            logger.info("Kết nối lại với Milvus...")
+            print("[MILVUS] Kết nối lại với Milvus...")
+            self._connect_to_milvus()
+            
+            # Thử tạo vector store mới
+            logger.info("Tạo vector store mới...")
+            print("[MILVUS] Tạo vector store mới...")
             self.vector_store = Milvus(
                 embedding_function=self.embedding_function,
                 collection_name=self.collection_name,
