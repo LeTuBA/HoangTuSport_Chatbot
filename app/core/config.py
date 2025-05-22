@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     MILVUS_FORCE_RECREATE: bool = Field(default=False, validation_alias="MILVUS_FORCE_RECREATE")
     
     # OpenAI settings
-    OPENAI_EMBEDDING_MODEL: str = Field(default="text-embedding-3-small", validation_alias="OPENAI_EMBEDDING_MODEL")
+    OPENAI_EMBEDDING_MODEL: str = Field(default="text-embedding-3-large", validation_alias="OPENAI_EMBEDDING_MODEL")
     OPENAI_API_BASE: str = Field(default="", validation_alias="OPENAI_API_BASE")
     OPENAI_API_TYPE: str = Field(default="", validation_alias="OPENAI_API_TYPE")
     OPENAI_API_VERSION: str = Field(default="", validation_alias="OPENAI_API_VERSION")
@@ -87,6 +87,7 @@ class Settings(BaseSettings):
 settings = Settings()
 print(f"Cấu hình đã được load thành công!")
 print(f"CHAT_MODEL: {settings.CHAT_MODEL}")
+print(f"OPENAI_EMBEDDING_MODEL: {settings.OPENAI_EMBEDDING_MODEL}")
 print(f"DATABASE_URL: {settings.DATABASE_URL}")
 
 # Đảm bảo OPENAI_MODEL và CHAT_MODEL nhất quán

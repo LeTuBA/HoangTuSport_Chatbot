@@ -8,27 +8,21 @@ class EmbeddingProvider:
     Provider cho các embedding models
     """
     def __init__(self):
-        self.model_name = settings.EMBEDDING_MODEL
+        # Sử dụng OPENAI_EMBEDDING_MODEL thay vì EMBEDDING_MODEL
+        self.model_name = settings.OPENAI_EMBEDDING_MODEL
         self._init_model()
     
     def _init_model(self):
         """
-        Khởi tạo embedding model dựa trên cấu hình
+        Khởi tạo embedding model OpenAI text-embedding-3-large
         """
-        if 'text-embedding-3' in self.model_name.lower() or 'openai' in self.model_name.lower():
-            # Sử dụng OpenAI embedding models
-            self.model = OpenAIEmbeddings(
-                model=self.model_name,
-                openai_api_key=settings.OPENAI_API_KEY,
-                dimensions=3072 if 'large' in self.model_name.lower() else 1536
-            )
-        else:
-            # Sử dụng Hugging Face model
-            self.model = HuggingFaceEmbeddings(
-                model_name=self.model_name,
-                model_kwargs={'device': 'cpu'},
-                encode_kwargs={'normalize_embeddings': True}
-            )
+        # Luôn sử dụng OpenAI embedding model
+        self.model = OpenAIEmbeddings(
+            model=self.model_name,
+            openai_api_key=settings.OPENAI_API_KEY,
+            dimensions=3072 if 'large' in self.model_name.lower() else 1536
+        )
+        print(f"[EMBEDDING] Đã khởi tạo OpenAI Embedding Model: {self.model_name}")
     
     def get_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
