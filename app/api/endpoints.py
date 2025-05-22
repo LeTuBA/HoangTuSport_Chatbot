@@ -168,9 +168,6 @@ async def sync_data(request: SyncRequest, background_tasks: BackgroundTasks):
 
 @router.post("/auto-sync", response_model=SyncResponse)
 async def auto_sync_data(request: AutoSyncRequest, background_tasks: BackgroundTasks):
-    """
-    Endpoint tự động đồng bộ dữ liệu từ Spring Boot API sang Vector DB
-    """
     print(f"[AUTO-SYNC] Bắt đầu quá trình đồng bộ tự động loại: {request.type}, limit: {request.limit}")
     try:
         if request.type == "products":
@@ -189,14 +186,25 @@ async def auto_sync_data(request: AutoSyncRequest, background_tasks: BackgroundT
             print(f"[AUTO-SYNC] Lấy được {len(products)} sản phẩm từ API")
             print(f"[AUTO-SYNC] Đang thêm dữ liệu vào vector database...")
             
-            # Gọi trực tiếp hàm thay vì qua background task để dễ debug
+            # Xử lý yêu cầu thay thế dữ liệu (drop và tạo lại collection)
+            if request.replace_data:
+                print(f"[AUTO-SYNC] Đã yêu cầu thay thế dữ liệu cũ, tiến hành xóa và tạo lại collection")
+                drop_success = vector_store.drop_and_recreate_collection()
+                if not drop_success:
+                    print(f"[AUTO-SYNC] Không thể xóa và tạo lại collection")
+                    return SyncResponse(
+                        status="error",
+                        count=0,
+                        message="Không thể xóa và tạo lại collection"
+                    )
+                print(f"[AUTO-SYNC] Đã xóa và tạo lại collection thành công, tiếp tục thêm dữ liệu mới")
+            
+            # Hiển thị cấu hình Milvus
+            print(f"[AUTO-SYNC] Milvus config: uri={settings.MILVUS_URI}, collection={settings.MILVUS_COLLECTION_NAME}")
+            
+            # Thêm dữ liệu trực tiếp thay vì qua background task
             try:
-                # Hiển thị cấu hình Milvus
-                print(f"[AUTO-SYNC] Milvus config: uri={settings.MILVUS_URI}, collection={settings.MILVUS_COLLECTION_NAME}")
-                
-                # Thêm dữ liệu trực tiếp thay vì qua background task
                 vector_store.add_products(products)
-                
                 print(f"[AUTO-SYNC] Hoàn thành quá trình thêm dữ liệu vào vector database")
             except Exception as e:
                 print(f"[AUTO-SYNC] Lỗi khi thêm dữ liệu vào vector database: {str(e)}")
@@ -209,7 +217,8 @@ async def auto_sync_data(request: AutoSyncRequest, background_tasks: BackgroundT
             return SyncResponse(
                 status="success",
                 count=len(products),
-                message=f"Đã tự động đồng bộ {len(products)} sản phẩm vào vector database"
+                message=f"Đã tự động đồng bộ {len(products)} sản phẩm vào vector database" 
+                       + (", thay thế toàn bộ dữ liệu cũ" if request.replace_data else "")
             )
         elif request.type == "suppliers":
             # Lấy dữ liệu nhà cung cấp từ Spring Boot API

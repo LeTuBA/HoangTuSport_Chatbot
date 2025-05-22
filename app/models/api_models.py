@@ -84,4 +84,5 @@ class AutoSyncRequest(BaseModel):
     Request model for auto-synchronization API
     """
     type: str
-    limit: Optional[int] = 100 
+    limit: Optional[int] = 100
+    replace_data: Optional[bool] = True  # Tham số cho phép xóa và tạo lại collection thay vì thêm dữ liệu mới

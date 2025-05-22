@@ -130,6 +130,44 @@ class VectorStore:
             traceback.print_exc()
             raise
     
+    def drop_and_recreate_collection(self):
+        """
+        Xóa collection hiện tại và tạo lại collection mới
+        
+        Returns:
+            bool: True nếu xóa và tạo lại thành công, False nếu có lỗi
+        """
+        try:
+            logger.info(f"Bắt đầu xóa và tạo lại collection '{self.collection_name}'")
+            print(f"[MILVUS] Bắt đầu xóa và tạo lại collection '{self.collection_name}'")
+            
+            # Kiểm tra collection có tồn tại không
+            exists = self._check_collection_exists()
+            
+            # Nếu tồn tại thì xóa
+            if exists:
+                logger.info(f"Xóa collection '{self.collection_name}' hiện tại")
+                print(f"[MILVUS] Xóa collection '{self.collection_name}' hiện tại")
+                utility.drop_collection(self.collection_name)
+            
+            # Tạo lại vector store và collection mới
+            connection_args = {"uri": self.uri}
+            self.vector_store = Milvus(
+                embedding_function=self.embedding_function,
+                collection_name=self.collection_name,
+                connection_args=connection_args,
+                auto_id=True
+            )
+            
+            logger.info(f"Đã tạo lại collection '{self.collection_name}' thành công")
+            print(f"[MILVUS] Đã tạo lại collection '{self.collection_name}' thành công")
+            return True
+        except Exception as e:
+            logger.error(f"Lỗi khi xóa và tạo lại collection: {str(e)}")
+            print(f"[MILVUS] Lỗi khi xóa và tạo lại collection: {str(e)}")
+            traceback.print_exc()
+            return False
+    
     def add_documents(self, documents: List[Document]):
         """
         Thêm tài liệu vào vector store
