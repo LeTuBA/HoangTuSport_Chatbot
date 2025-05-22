@@ -164,23 +164,23 @@ class VectorStore:
                     # Lấy ID của sản phẩm để log
                     product_id = product.get("id", "không có ID")
                     
-                    # Tạo văn bản phong phú từ thông tin sản phẩm
-                    product_text = f"Sản phẩm {product.get('name', '')} có mã sản phẩm {product.get('id', '')}. "
-                    product_text += f"Mô tả: {product.get('description', '')}. "
-                    product_text += f"Giá bán: {product.get('sellPrice', product.get('price', 0))} $ (đô la Mỹ). "
+                    # Tạo văn bản phong phú từ thông tin sản phẩm bằng tiếng Anh
+                    product_text = f"Product {product.get('name', '')} with product code {product.get('id', '')}. "
+                    product_text += f"Description: {product.get('description', '')}. "
+                    product_text += f"Selling price: {product.get('sellPrice', product.get('price', 0))} $ (USD). "
                     
                     if product.get('quantity') is not None:
-                        product_text += f"Số lượng tồn kho: {product.get('quantity')}. "
+                        product_text += f"Stock quantity: {product.get('quantity')}. "
                     
                     if product.get('status') is not None:
-                        product_text += f"Trạng thái: {product.get('status')}. "
+                        product_text += f"Status: {product.get('status')}. "
                     
                     if product.get('category') is not None:
-                        product_text += f"Thuộc danh mục: {product.get('category', {}).get('name', '')}. "
+                        product_text += f"Category: {product.get('category', {}).get('name', '')}. "
                     
                     # Thêm thông tin nhà cung cấp nếu có
                     if product.get('supplier') is not None:
-                        product_text += f"Nhà cung cấp: {product.get('supplier', {}).get('name', '')}. "
+                        product_text += f"Supplier: {product.get('supplier', {}).get('name', '')}. "
                     
                     # Log mẫu cho vài sản phẩm đầu tiên
                     if idx < 2:

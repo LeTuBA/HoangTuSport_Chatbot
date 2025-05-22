@@ -152,23 +152,14 @@ class SpringBootClient:
         return self.search_products(filter_query)
     
     def get_products_by_price_range(self, min_price: float = None, max_price: float = None) -> List[Dict[str, Any]]:
-        """
-        Lọc sản phẩm theo khoảng giá sử dụng Spring Filter
-        
-        Args:
-            min_price: Giá tối thiểu
-            max_price: Giá tối đa
-            
-        Returns:
-            Danh sách sản phẩm trong khoảng giá
-        """
         filters = []
         if min_price is not None:
-            filters.append(f"sellPrice>:{min_price}")
+            filters.append(f"sellPrice>{min_price}")
         if max_price is not None:
-            filters.append(f"sellPrice<:{max_price}")
+            filters.append(f"sellPrice<{max_price}")
             
         filter_query = " and ".join(filters) if filters else None
+        print(f"Filter query: {filter_query}")
         return self.search_products(filter_query)
     
     def add_to_cart(self, product_id: str, quantity: int = 1) -> Dict[str, Any]:

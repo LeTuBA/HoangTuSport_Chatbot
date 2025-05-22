@@ -76,35 +76,8 @@ def search_products_by_price_range(min_price: float = None, max_price: float = N
     """
     return spring_boot_client.get_products_by_price_range(min_price, max_price)
 
-def compare_products(product_ids: List[str]) -> List[Dict]:
-    """
-    So sánh thông tin của nhiều sản phẩm
-    
-    Args:
-        product_ids: Danh sách ID các sản phẩm cần so sánh
-    
-    Returns:
-        Thông tin chi tiết của các sản phẩm để so sánh
-    """
-    products = []
-    for product_id in product_ids:
-        product = spring_boot_client.get_product_by_id(product_id)
-        if product:
-            products.append(product)
-    return products
-
 @function_tool
 def product_search(query: str, top_k: int = None) -> List[Dict[str, Any]]:
-    """
-    Tìm kiếm sản phẩm trong vector store
-    
-    Args:
-        query: Câu truy vấn tìm kiếm
-        top_k: Số lượng kết quả trả về (mặc định là 5)
-        
-    Returns:
-        Danh sách sản phẩm phù hợp với truy vấn
-    """
     try:
         # Xử lý giá trị mặc định cho top_k bên trong thân hàm
         if top_k is None:
@@ -137,3 +110,19 @@ def product_details(product_id: str) -> Dict[str, Any]:
     """
     result = spring_boot_client.get_product_by_id(product_id)
     return result if result else {} 
+
+@function_tool("Tìm kiếm sản phẩm theo khoảng giá từ API")
+def find_products_by_price_range(min_price: float, max_price: float) -> List[Dict]:
+    print(f"Tìm kiếm sản phẩm trong khoảng giá {min_price:,.0f} - {max_price:,.0f} VNĐ từ API")
+    results = spring_boot_client.get_products_by_price_range(min_price, max_price)
+    
+    # Thêm thông tin chi tiết để debug
+    if results:
+        print(f"Tìm thấy {len(results)} sản phẩm trong khoảng giá từ API")
+        # Hiển thị thông tin 2 sản phẩm đầu tiên để debug
+        for i, product in enumerate(results[:2]):
+            print(f"  {i+1}. {product.get('name', 'Không tên')} - Giá: {product.get('sellPrice', product.get('price', 0)):,.0f} VNĐ")
+    else:
+        print("Không tìm thấy sản phẩm nào trong khoảng giá yêu cầu")
+        
+    return results
