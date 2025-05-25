@@ -1,6 +1,6 @@
 from agents import Agent, Runner, function_tool
 from ..core.config import settings
-from ..tools.product_tools import product_search, product_details
+from ..tools.product_tools import product_search, product_details, find_products_by_price_range
 from ..prompts.product_agent import PRODUCT_AGENT_PROMPT
 from ..core.hooks import CustomAgentHooks
 from ..client.spring_client import spring_boot_client
@@ -28,7 +28,8 @@ class ProductAgentWrapper:
             model=settings.CHAT_MODEL,
             tools=[
                 product_search,
-                product_details
+                product_details,
+                find_products_by_price_range
             ],
             hooks=self.hooks
         )
