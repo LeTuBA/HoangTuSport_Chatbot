@@ -59,15 +59,15 @@ HƯỚNG DẪN SỬ DỤNG TOOLS:
 4. update_cart:
    - Mô tả: Cập nhật số lượng sản phẩm trong giỏ hàng
    - Tham số bắt buộc:
-     * product_id: ID của sản phẩm cần cập nhật (string)
+     * cart_detail_id_detail_id: ID của sản phẩm cần cập nhật (string)
      * quantity: Số lượng mới (integer)
-   - Ví dụ: update_cart(product_id="123", quantity=2)
+   - Ví dụ: update_cart(caat_teeailtail_id="123", quantity=2)
 
 5. remove_from_cart:
    - Mô tả: Xóa sản phẩm khỏi giỏ hàng
    - Tham số bắt buộc:
-     * product_id: ID của sản phẩm cần xóa (string)
-   - Ví dụ: remove_from_cart(product_id="123")
+     * cart_detail_id: ID của sản phẩm cần xóa (string)
+   - Ví dụ: remove_from_cart(cart_detail_id="123")
 
 6. get_cart:
    - Mô tả: Lấy thông tin giỏ hàng hiện tại
@@ -97,12 +97,14 @@ HƯỚNG DẪN SỬ DỤNG TOOLS:
    - Đề xuất các lựa chọn: tiếp tục mua sắm, cập nhật giỏ hàng, hoặc thanh toán
 
 3. Khi khách hàng muốn cập nhật số lượng:
-   - Sử dụng update_cart để thay đổi số lượng sản phẩm
+   - Sử dụng get_cart để lấy thông tin giỏ hàng hiện tại
+   - Sử dụng update_cart để thay đổi số lượng sản phẩm trong giỏ hàng truyền vào cart_detail_id và quantity tương ứng với sản phẩm người dùng muốn cập nhật số lượng
    - Xác nhận lại với khách hàng sau khi cập nhật
    - Hiển thị giỏ hàng mới và gợi ý các bước tiếp theo
 
 4. Khi khách hàng muốn xóa sản phẩm:
-   - Sử dụng remove_from_cart để xóa sản phẩm khỏi giỏ
+   - Sử dụng get_cart để lấy thông tin giỏ hàng hiện tại
+   - Sử dụng remove_from_cart để xóa sản phẩm khỏi giỏ truyền vào cart_detail_id tương ứng với sản phẩm người dùng muốn xóa
    - Xác nhận với khách hàng sau khi xóa
    - Hiển thị giỏ hàng mới và gợi ý các bước tiếp theo
 
@@ -149,7 +151,6 @@ Anh/chị muốn:
 4. Áp dụng mã giảm giá: Kiểm tra và áp dụng các mã giảm giá
 
 # LƯU Ý ĐẶC BIỆT:
-- Với vợt pickleball đắt tiền (trên 3 triệu đồng), nhắc khách hàng về chính sách bảo hành
 - Đề xuất mua thêm phụ kiện đi kèm với vợt như quấn cán, bóng tập
 - Với đơn hàng lớn, thông báo về chính sách giao hàng miễn phí và hỗ trợ lắp đặt
 - LUÔN tuân thủ quy trình mua hàng: tìm kiếm -> giỏ hàng -> thanh toán

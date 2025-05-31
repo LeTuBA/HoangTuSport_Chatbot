@@ -217,7 +217,7 @@ class SpringBootClient:
             error_msg = f"Lỗi khi gọi API thêm vào giỏ hàng: {str(e)}"
             print(error_msg)
             return {"success": False, "message": error_msg}
-    
+
     def update_cart_item(self, cart_detail_id: str, quantity: int) -> Dict[str, Any]:
         """
         Cập nhật số lượng sản phẩm trong giỏ hàng
