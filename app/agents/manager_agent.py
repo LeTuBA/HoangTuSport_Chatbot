@@ -46,10 +46,16 @@ class ManagerAgentWrapper:
             tool_description="Chuyển câu hỏi cho chuyên gia cửa hàng khi khách hàng hỏi về cửa hàng"
         )
         
-        self.checkout_handoff = checkout_agent.agent.as_tool(
-            tool_name="consult_checkout_expert",
-            tool_description="Chuyển câu hỏi cho chuyên gia thanh toán khi khách hàng muốn thanh toán hoặc tạo đơn hàng"
-        )
+        # Đảm bảo checkout_agent.agent đã được khởi tạo đúng cách
+        try:
+            self.checkout_handoff = checkout_agent.agent.as_tool(
+                tool_name="consult_checkout_expert",
+                tool_description="Chuyển câu hỏi cho chuyên gia thanh toán khi khách hàng muốn thanh toán, xem đơn hàng hoặc tạo đơn hàng"
+            )
+        except Exception as e:
+            print(f"Lỗi khi tạo checkout_handoff: {str(e)}")
+            # Fallback để tránh lỗi khi khởi tạo
+            self.checkout_handoff = None
     
     async def _analyze_message(self, message: str, context: str = "") -> str:
         """
@@ -65,7 +71,7 @@ class ManagerAgentWrapper:
             1. product - Nếu liên quan đến sản phẩm, tìm kiếm, so sánh giá
             2. cart - Nếu liên quan đến giỏ hàng, thêm/xóa sản phẩm
             3. shop - Nếu liên quan đến thông tin cửa hàng
-            4. checkout - Nếu liên quan đến thanh toán, tạo đơn hàng
+            4. checkout - Nếu liên quan đến thanh toán, tạo đơn hàng, xem đơn hàng
             5. unknown - Nếu không rõ ràng
             
             Chỉ trả về một trong các giá trị trên, không thêm bất kỳ thông tin nào khác.
@@ -124,17 +130,18 @@ class ManagerAgentWrapper:
             }
         
         # Nếu không rõ ràng, sử dụng orchestrator
+        # Tạo danh sách tools có sẵn
+        tools = [get_assistant_info, self.product_handoff, self.cart_handoff, self.shop_handoff]
+        
+        # Thêm checkout_handoff vào danh sách tools nếu nó đã được khởi tạo thành công
+        if self.checkout_handoff is not None:
+            tools.append(self.checkout_handoff)
+        
         orchestrator = Agent(
             name="Orchestrator",
             instructions=MANAGER_AGENT_PROMPT,
             model=settings.CHAT_MODEL,
-            tools=[
-                get_assistant_info,
-                self.product_handoff,
-                self.cart_handoff,
-                self.shop_handoff,
-                self.checkout_handoff
-            ],
+            tools=tools,
             hooks=self.hooks
         )
         
