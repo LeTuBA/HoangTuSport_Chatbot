@@ -49,8 +49,13 @@ def list_my_orders() -> str:
     """
     Lấy danh sách đơn hàng của người dùng
     """
-    result = get_my_orders()
-    return json.dumps(result)
+    try:
+        # Sử dụng spring_boot_client trực tiếp thay vì gọi get_my_orders()
+        result = spring_boot_client.get_my_orders()
+        return json.dumps(result)
+    except Exception as e:
+        print(f"Lỗi khi lấy danh sách đơn hàng: {str(e)}")
+        return json.dumps({"error": str(e), "orders": []})
 
 class CheckoutAgentWrapper:
     """
@@ -71,7 +76,7 @@ class CheckoutAgentWrapper:
                 create_order,         # Sử dụng trực tiếp create_order từ cart_tools
                 get_order_details,    # Lấy thông tin đơn hàng
                 get_payment_details,  # Lấy thông tin thanh toán
-                list_my_orders       # Lấy danh sách đơn hàng của tôi
+                list_my_orders        # Lấy danh sách đơn hàng của tôi
             ],
             hooks=self.hooks
         )
