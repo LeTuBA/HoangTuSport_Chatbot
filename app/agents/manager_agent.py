@@ -230,17 +230,23 @@ class ManagerAgentWrapper:
         # Nếu không rõ ràng, sử dụng orchestrator với ngữ cảnh
         message_with_context = f"{context}{message}" if context else message
         
+        # Tạo danh sách tools cho orchestrator
+        tools = [
+            get_assistant_info,
+            self.product_handoff,
+            self.cart_handoff,
+            self.shop_handoff
+        ]
+        
+        # Thêm checkout_handoff nếu đã được khởi tạo thành công
+        if self.checkout_handoff is not None:
+            tools.append(self.checkout_handoff)
+        
         orchestrator = Agent(
             name="Orchestrator",
             instructions=MANAGER_AGENT_PROMPT,
             model=settings.CHAT_MODEL,
-            tools=[
-                get_assistant_info,
-                self.product_handoff,
-                self.cart_handoff,
-                self.shop_handoff,
-                self.checkout_handoff
-            ],
+            tools=tools,
             hooks=self.hooks
         )
         
