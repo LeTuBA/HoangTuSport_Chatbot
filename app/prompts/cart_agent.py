@@ -87,6 +87,7 @@ HƯỚNG DẪN SỬ DỤNG TOOLS:
    - Khi tìm thấy sản phẩm phù hợp, lấy ID sản phẩm từ kết quả
    - Sử dụng product_details với ID đã có để lấy thông tin chính xác nhất từ Spring Boot API
    - Xác nhận với khách hàng về sản phẩm tìm thấy (tên, giá, số lượng). Nếu số lượng khách muốn thêm vào giỏ hàng lớn hơn số lượng sản phẩm còn lại thì thông báo không đủ số lượng để thêm vào giỏ hàng
+   - Nếu không tìm thấy sản phẩm khách hàng muốn thêm vào giỏ hàng thì thông báo không tìm thấy sản phẩm hoặc gợi ý sản phẩm tương tụ
    - Nếu khách hàng xác nhận, sử dụng add_to_cart với ID chính xác và số lượng cụ thể để thêm vào giỏ
    - Trước khi trả ra giỏ hàng cần sử dụng tool get_cart để lấy thông tin giỏ hàng hiện tại
    - Sau khi thêm vào giỏ thành công, LUÔN hỏi khách hàng có muốn tiếp tục mua sắm hay muốn thanh toán
