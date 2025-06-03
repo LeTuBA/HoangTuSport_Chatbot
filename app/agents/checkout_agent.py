@@ -45,20 +45,36 @@ class CheckoutAgentWrapper:
         Returns:
             bool: True nếu tin nhắn liên quan đến xem đơn hàng, False nếu không
         """
-        # Các từ khóa liên quan đến việc xem đơn hàng
-        order_keywords = [
-            "đơn hàng", "lịch sử đơn hàng", "xem đơn", "đơn của tôi", 
-            "order", "orders", "đơn đã đặt", "đơn hàng của tôi",
-            "đơn của mình", "lịch sử mua hàng", "đơn đã mua", "order history",
-            "kiểm tra đơn", "trạng thái đơn"
-        ]
-        
-        message_lower = message.lower()
-        for keyword in order_keywords:
-            if keyword in message_lower:
-                return True
+        try:
+            # Đảm bảo message là string
+            if message is None:
+                return False
                 
-        return False
+            if not isinstance(message, str):
+                message = str(message)
+                
+            # Các từ khóa liên quan đến việc xem đơn hàng
+            order_keywords = [
+                "đơn hàng", "lịch sử đơn hàng", "xem đơn", "đơn của tôi", 
+                "order", "orders", "đơn đã đặt", "đơn hàng của tôi",
+                "đơn của mình", "lịch sử mua hàng", "đơn đã mua", "order history",
+                "kiểm tra đơn", "trạng thái đơn", "thanh toán", "payment", "tạo đơn",
+                "hoàn tất", "hoàn thành", "hoàn tất đơn hàng", "thanh toán đơn hàng"
+            ]
+            
+            message_lower = message.lower()
+            for keyword in order_keywords:
+                if keyword in message_lower:
+                    print(f"Checkout Agent - Detected order-related keyword: '{keyword}' in message: '{message_lower}'")
+                    return True
+                    
+            # Không tìm thấy từ khóa liên quan đến đơn hàng
+            print(f"Checkout Agent - No order-related keywords found in message: '{message_lower}'")
+            return False
+        except Exception as e:
+            print(f"Exception in _is_order_related_query: {str(e)}")
+            # Trả về False trong trường hợp có lỗi xảy ra
+            return False
     
     async def process(self, message: str, thread_id: str = None, user_id: str = None, auth_token: str = None):
         """
@@ -70,57 +86,68 @@ class CheckoutAgentWrapper:
             user_id: ID người dùng
             auth_token: Token xác thực JWT
         """
-        # Cập nhật token cho Spring Boot client
-        print(f"Auth token received: {auth_token[:20]}...") if auth_token else print("Auth token is None")
-        spring_boot_client.update_auth_token(auth_token)
-        
-        # Kiểm tra nếu tin nhắn liên quan đến việc xem đơn hàng
-        is_order_query = await self._is_order_related_query(message)
-        
-        # Nếu không phải truy vấn về đơn hàng, kiểm tra giỏ hàng trước khi xử lý
-        if not is_order_query:
-            # Kiểm tra giỏ hàng trước khi xử lý
-            cart = spring_boot_client.get_cart()
-            print(f"Checkout Agent - Get Cart Result: {cart}")
+        try:
+            # Cập nhật token cho Spring Boot client
+            print(f"Auth token received: {auth_token[:20]}...") if auth_token else print("Auth token is None")
+            spring_boot_client.update_auth_token(auth_token)
             
-            if not cart:
-                print("Checkout Agent - Cart is None")
-                return {
-                    "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
-                    "source_documents": [],
-                    "thread_id": thread_id
-                }
+            # Kiểm tra nếu tin nhắn liên quan đến việc xem đơn hàng
+            is_order_query = await self._is_order_related_query(message)
+            
+            # Nếu không phải truy vấn về đơn hàng, kiểm tra giỏ hàng trước khi xử lý
+            if not is_order_query:
+                # Kiểm tra giỏ hàng trước khi xử lý
+                cart = spring_boot_client.get_cart()
+                print(f"Checkout Agent - Get Cart Result: {cart}")
                 
-            if not cart.get("items"):
-                print(f"Checkout Agent - Cart items is empty or not found. Cart structure: {cart}")
-                return {
-                    "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
-                    "source_documents": [],
-                    "thread_id": thread_id
-                }
-        else:
-            print(f"Checkout Agent - Processing order-related query: {message}")
+                if not cart:
+                    print("Checkout Agent - Cart is None")
+                    return {
+                        "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
+                        "source_documents": [],
+                        "thread_id": thread_id
+                    }
+                    
+                if not cart.get("items"):
+                    print(f"Checkout Agent - Cart items is empty or not found. Cart structure: {cart}")
+                    return {
+                        "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
+                        "source_documents": [],
+                        "thread_id": thread_id
+                    }
+            else:
+                print(f"Checkout Agent - Processing order-related query: {message}")
+                
+            # Sử dụng Runner để xử lý tin nhắn
+            result = await Runner.run(self.agent, message)
             
-        # Sử dụng Runner để xử lý tin nhắn
-        result = await Runner.run(self.agent, message)
-        
-        # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
-        source_documents = []
-        if hasattr(result, 'tool_calls'):
-            for tool_call in result.tool_calls:
-                if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
-                    try:
-                        order_data = json.loads(tool_call.output)
-                        if isinstance(order_data, dict) or isinstance(order_data, list):
-                            source_documents.append(order_data)
-                    except Exception as e:
-                        print(f"Error parsing tool output: {e}")
-        
-        return {
-            "message": result.final_output,
-            "source_documents": source_documents,
-            "thread_id": thread_id
-        }
+            # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
+            source_documents = []
+            if hasattr(result, 'tool_calls'):
+                for tool_call in result.tool_calls:
+                    if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
+                        try:
+                            order_data = json.loads(tool_call.output)
+                            if isinstance(order_data, dict) or isinstance(order_data, list):
+                                source_documents.append(order_data)
+                        except Exception as e:
+                            print(f"Error parsing tool output: {e}")
+            
+            return {
+                "message": result.final_output,
+                "source_documents": source_documents,
+                "thread_id": thread_id
+            }
+        except Exception as e:
+            print(f"Exception in checkout_agent.process: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Trả về một thông báo lỗi để tránh lỗi 500
+            return {
+                "message": "Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu thanh toán của bạn. Vui lòng thử lại sau hoặc liên hệ với bộ phận hỗ trợ.",
+                "source_documents": [],
+                "thread_id": thread_id
+            }
         
     async def process_with_history(
         self, 
@@ -143,69 +170,80 @@ class CheckoutAgentWrapper:
         Returns:
             Dict: Kết quả từ agent
         """
-        # Cập nhật token cho Spring Boot client
-        print(f"Auth token received in process_with_history: {auth_token[:20]}...") if auth_token else print("Auth token is None in process_with_history")
-        spring_boot_client.update_auth_token(auth_token)
-        
-        # Kiểm tra nếu tin nhắn liên quan đến việc xem đơn hàng
-        is_order_query = await self._is_order_related_query(message)
-        
-        # Nếu không phải truy vấn về đơn hàng, kiểm tra giỏ hàng trước khi xử lý
-        if not is_order_query:
-            # Kiểm tra giỏ hàng trước khi xử lý
-            cart = spring_boot_client.get_cart()
-            print(f"Checkout Agent (with history) - Get Cart Result: {cart}")
+        try:
+            # Cập nhật token cho Spring Boot client
+            print(f"Auth token received in process_with_history: {auth_token[:20]}...") if auth_token else print("Auth token is None in process_with_history")
+            spring_boot_client.update_auth_token(auth_token)
             
-            if not cart:
-                print("Checkout Agent (with history) - Cart is None")
-                return {
-                    "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
-                    "source_documents": [],
-                    "thread_id": thread_id
-                }
+            # Kiểm tra nếu tin nhắn liên quan đến việc xem đơn hàng
+            is_order_query = await self._is_order_related_query(message)
+            
+            # Nếu không phải truy vấn về đơn hàng, kiểm tra giỏ hàng trước khi xử lý
+            if not is_order_query:
+                # Kiểm tra giỏ hàng trước khi xử lý
+                cart = spring_boot_client.get_cart()
+                print(f"Checkout Agent (with history) - Get Cart Result: {cart}")
                 
-            if not cart.get("items"):
-                print(f"Checkout Agent (with history) - Cart items is empty or not found. Cart structure: {cart}")
-                return {
-                    "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
-                    "source_documents": [],
-                    "thread_id": thread_id
-                }
-        else:
-            print(f"Checkout Agent (with history) - Processing order-related query: {message}")
-        
-        # Chuẩn bị ngữ cảnh từ lịch sử trò chuyện
-        context = ""
-        if conversation_history and len(conversation_history) > 0:
-            context = "Đây là lịch sử trò chuyện trước đó:\n"
-            for msg in conversation_history:
-                role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
-                context += f"{role}: {msg['content']}\n"
-            context += "\nDựa vào lịch sử trên, hãy trả lời tin nhắn mới này:\n"
-        
-        # Tạo tin nhắn với ngữ cảnh
-        message_with_context = f"{context}{message}" if context else message
-        
-        # Sử dụng Runner để xử lý tin nhắn
-        result = await Runner.run(self.agent, message_with_context)
-        
-        # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
-        source_documents = []
-        if hasattr(result, 'tool_calls'):
-            for tool_call in result.tool_calls:
-                if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
-                    try:
-                        order_data = json.loads(tool_call.output)
-                        if isinstance(order_data, dict) or isinstance(order_data, list):
-                            source_documents.append(order_data)
-                    except Exception as e:
-                        print(f"Error parsing tool output: {e}")
-        
-        return {
-            "message": result.final_output,
-            "source_documents": source_documents,
-            "thread_id": thread_id
-        }
+                if not cart:
+                    print("Checkout Agent (with history) - Cart is None")
+                    return {
+                        "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
+                        "source_documents": [],
+                        "thread_id": thread_id
+                    }
+                    
+                if not cart.get("items"):
+                    print(f"Checkout Agent (with history) - Cart items is empty or not found. Cart structure: {cart}")
+                    return {
+                        "message": "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.",
+                        "source_documents": [],
+                        "thread_id": thread_id
+                    }
+            else:
+                print(f"Checkout Agent (with history) - Processing order-related query: {message}")
+            
+            # Chuẩn bị ngữ cảnh từ lịch sử trò chuyện
+            context = ""
+            if conversation_history and len(conversation_history) > 0:
+                context = "Đây là lịch sử trò chuyện trước đó:\n"
+                for msg in conversation_history:
+                    role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
+                    context += f"{role}: {msg['content']}\n"
+                context += "\nDựa vào lịch sử trên, hãy trả lời tin nhắn mới này:\n"
+            
+            # Tạo tin nhắn với ngữ cảnh
+            message_with_context = f"{context}{message}" if context else message
+            
+            # Sử dụng Runner để xử lý tin nhắn
+            result = await Runner.run(self.agent, message_with_context)
+            
+            # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
+            source_documents = []
+            if hasattr(result, 'tool_calls'):
+                for tool_call in result.tool_calls:
+                    if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
+                        try:
+                            order_data = json.loads(tool_call.output)
+                            if isinstance(order_data, dict) or isinstance(order_data, list):
+                                source_documents.append(order_data)
+                        except Exception as e:
+                            print(f"Error parsing tool output: {e}")
+            
+            return {
+                "message": result.final_output,
+                "source_documents": source_documents,
+                "thread_id": thread_id
+            }
+        except Exception as e:
+            print(f"Exception in checkout_agent.process_with_history: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Trả về một thông báo lỗi để tránh lỗi 500
+            return {
+                "message": "Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu thanh toán của bạn. Vui lòng thử lại sau hoặc liên hệ với bộ phận hỗ trợ.",
+                "source_documents": [],
+                "thread_id": thread_id
+            }
 
 # Singleton instance
 checkout_agent = CheckoutAgentWrapper() 
