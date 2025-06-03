@@ -34,15 +34,6 @@ class SpringBootClient:
             del self.headers["Authorization"]
     
     def get_all_products(self, limit: int = 140) -> List[Dict[str, Any]]:
-        """
-        Lấy tất cả sản phẩm từ Spring Boot API
-        
-        Args:
-            limit: Số lượng sản phẩm tối đa cần lấy
-            
-        Returns:
-            Danh sách sản phẩm
-        """
         url = f"{self.base_url}/api/v1/products"
         params = {"page": 1, "size": limit}
         

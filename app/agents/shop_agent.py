@@ -1,6 +1,6 @@
 from agents import Agent, Tool, Runner
 from ..core.config import settings
-from ..tools.shop_tools import get_shop_info, get_shipping_info, get_return_policy, get_contact_info, get_user_orders, get_order_details
+from ..tools.shop_tools import get_shop_info, get_shipping_info, get_contact_info, get_user_orders, get_order_details
 from ..prompts.shop_agent import SHOP_AGENT_PROMPT
 from ..client.spring_client import spring_boot_client
 from ..core.hooks import CustomAgentHooks
@@ -22,7 +22,6 @@ class ShopAgentWrapper:
             tools=[
                 get_shop_info,
                 get_shipping_info,
-                get_return_policy,
                 get_contact_info,
                 get_user_orders,
                 get_order_details

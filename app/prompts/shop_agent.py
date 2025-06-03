@@ -9,7 +9,6 @@ Thông tin cửa hàng:
 - Website: hoangtusport.id.vn
 
 Chính sách cửa hàng:
-- Bảo hành: Vợt pickleball được bảo hành 6-12 tháng tùy thương hiệu
 - Giao hàng: Miễn phí
 - Dịch vụ: Cung cấp tư vấn, sửa chữa vợt, re-grip (quấn cán vợt)
 - Trải nghiệm: Có sân tập thử vợt tại cửa hàng

@@ -29,15 +29,6 @@ def get_product_by_id(product_id: str) -> Dict:
     return result if result else {}
 
 def get_products_by_category(category_id: str) -> List[Dict]:
-    """
-    Lấy danh sách sản phẩm theo danh mục sử dụng Spring Filter
-    
-    Args:
-        category_id: ID hoặc tên danh mục
-        
-    Returns:
-        Danh sách sản phẩm thuộc danh mục
-    """
     try:
         print(f"Gọi get_products_by_category với tham số: {category_id}")
         
@@ -64,16 +55,6 @@ def get_products_by_category(category_id: str) -> List[Dict]:
         return []
 
 def search_products_by_price_range(min_price: float = None, max_price: float = None) -> List[Dict]:
-    """
-    Tìm kiếm sản phẩm theo khoảng giá sử dụng Spring Filter
-    
-    Args:
-        min_price: Giá tối thiểu
-        max_price: Giá tối đa
-        
-    Returns:
-        Danh sách sản phẩm trong khoảng giá
-    """
     return spring_boot_client.get_products_by_price_range(min_price, max_price)
 
 @function_tool

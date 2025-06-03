@@ -33,7 +33,7 @@ class ManagerAgentWrapper:
         # Định nghĩa handoffs theo cú pháp chính thức của OpenAI Agents SDK
         self.product_handoff = product_agent.agent.as_tool(
             tool_name="consult_product_expert",
-            tool_description="Chuyển câu hỏi cho chuyên gia sản phẩm bánh khi khách hàng hỏi về sản phẩm"
+            tool_description="Chuyển câu hỏi cho chuyên gia sản phẩm khi khách hàng hỏi về sản phẩm"
         )
         
         self.cart_handoff = cart_agent.agent.as_tool(
@@ -79,15 +79,6 @@ class ManagerAgentWrapper:
         return result.final_output.strip().lower()
 
     async def process(self, message: str, thread_id: str = None, user_id: str = None, auth_token: str = None):
-        """
-        Xử lý tin nhắn từ người dùng và quyết định chuyển tiếp đến agent phù hợp
-        
-        Args:
-            message: Tin nhắn của người dùng
-            thread_id: ID cuộc trò chuyện
-            user_id: ID người dùng
-            auth_token: Token xác thực JWT
-        """
         # Cập nhật token xác thực cho spring_boot_client nếu có
         spring_boot_client.update_auth_token(auth_token)
         

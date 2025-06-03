@@ -30,55 +30,50 @@ def get_order_details(order_id: str) -> Dict[str, Any]:
 @function_tool("Lấy thông tin tổng quan về cửa hàng")
 def get_shop_info() -> Dict[str, Any]:
     """
-    Lấy thông tin tổng quan về cửa hàng bánh Cosmo
+    Lấy thông tin tổng quan về cửa hàng Hoàng Tú Pickleball Shop
     
     Returns:
         Thông tin cơ bản về cửa hàng
     """
     return {
-        "name": "Cosmo Bakery",
-        "description": "Cửa hàng bánh Cosmo chuyên cung cấp các loại bánh tươi ngon, chất lượng cao với nhiều loại bánh truyền thống và hiện đại.",
-        "established": "2020",
-        "specialty": "Bánh sinh nhật, bánh kem, bánh ngọt, bánh mì"
+        "name": "Hoàng Tú Pickleball Shop",
+        "description": "Cửa hàng Hoàng Tú Pickleball Shop chuyên cung cấp các sản phẩm và dịch vụ liên quan đến môn Pickleball chất lượng cao, từ vợt, bóng đến phụ kiện và dịch vụ sửa chữa.",
+        "established": "2023",
+        "specialty": "Vợt Pickleball, bóng, phụ kiện và dịch vụ sửa chữa",
+        "address": "Yên Phong, Bắc Ninh",
+        "hours": "8:00 - 22:00 tất cả các ngày trong tuần",
+        "phone": "0327 333 333",
+        "email": "info@hoangtusport.id.vn",
+        "website": "hoangtusport.id.vn",
+        "services": [
+            "Tư vấn sản phẩm Pickleball",
+            "Cung cấp sản phẩm Pickleball",
+        ]
     }
 
-@function_tool("Lấy thông tin về vận chuyển và giao bánh")
+@function_tool("Lấy thông tin về vận chuyển và giao hàng")
 def get_shipping_info() -> Dict[str, Any]:
     """
-    Lấy thông tin về phương thức vận chuyển và giao bánh
+    Lấy thông tin về phương thức vận chuyển và giao hàng
     
     Returns:
         Thông tin chi tiết về các phương thức vận chuyển
     """
     return {
         "delivery_options": [
-            {"name": "Giao hàng tiêu chuẩn", "time": "2-3 giờ", "fee": 30000},
-            {"name": "Giao hàng nhanh", "time": "1 giờ", "fee": 50000},
-            {"name": "Giao hàng theo lịch hẹn", "time": "Theo yêu cầu", "fee": 70000}
+            {"name": "Giao hàng tiêu chuẩn", "time": "Tùy khu vực", "fee": 0},
+            {"name": "Giao hàng hỏa tốc (nội thành Bắc Ninh)", "time": "Trong ngày", "fee": 0}
         ],
-        "free_shipping": "Đơn hàng từ 500.000 VNĐ",
-        "delivery_areas": "Nội thành Hà Nội và TP.HCM",
-        "note": "Bánh cần được bảo quản trong điều kiện mát, tránh va đập trong quá trình vận chuyển"
+        "delivery_times": [
+            {"area": "Miền Bắc, Hà Nội", "time": "1-2 ngày"},
+            {"area": "Miền Nam, TP.HCM", "time": "3-5 ngày"},
+            {"area": "Khu vực khác", "time": "2-4 ngày"}
+        ],
+        "free_shipping": "Miễn phí giao hàng toàn quốc với đơn hàng tiêu chuẩn",
+        "delivery_areas": "Giao hàng toàn quốc",
+        "note": "Đảm bảo sản phẩm được đóng gói cẩn thận, tránh va đập trong quá trình vận chuyển"
     }
 
-@function_tool("Lấy thông tin về chính sách đổi/trả bánh")
-def get_return_policy() -> Dict[str, Any]:
-    """
-    Lấy thông tin về chính sách đổi/trả bánh
-    
-    Returns:
-        Thông tin chi tiết về chính sách đổi trả
-    """
-    return {
-        "return_period": "Trong vòng 24 giờ sau khi nhận hàng",
-        "conditions": [
-            "Bánh bị hư hỏng, không đúng mẫu mã đã đặt",
-            "Bánh không đảm bảo chất lượng, vệ sinh an toàn thực phẩm",
-            "Giao sai loại bánh hoặc số lượng"
-        ],
-        "process": "Liên hệ hotline để được hướng dẫn đổi/trả",
-        "exceptions": "Không áp dụng đối với bánh đã sử dụng một phần hoặc bánh đặt riêng theo yêu cầu"
-    }
 
 @function_tool("Lấy thông tin liên hệ của cửa hàng")
 def get_contact_info() -> Dict[str, Any]:
@@ -89,23 +84,18 @@ def get_contact_info() -> Dict[str, Any]:
         Thông tin chi tiết về các kênh liên hệ và địa chỉ cửa hàng
     """
     return {
-        "phone": "1900 1234",
-        "email": "info@cosmobakery.vn",
-        "website": "www.cosmobakery.vn",
+        "phone": "0327 333 333",
+        "email": "info@hoangtusport.id.vn",
+        "website": "hoangtusport.id.vn",
         "social_media": {
-            "facebook": "facebook.com/cosmobakery",
-            "instagram": "instagram.com/cosmobakery"
+            "facebook": "facebook.com/hoangtupickleballshop",
+            "instagram": "instagram.com/hoangtupickleball"
         },
         "locations": [
             {
-                "address": "123 Nguyễn Trãi, Quận 1, TP.HCM",
-                "phone": "028 1234 5678",
-                "hours": "7:00 - 22:00"
-            },
-            {
-                "address": "456 Lê Lợi, Hà Đông, Hà Nội",
-                "phone": "024 8765 4321",
-                "hours": "7:00 - 21:30"
+                "address": "Yên Phong, Bắc Ninh",
+                "phone": "0327 333 333",
+                "hours": "8:00 - 22:00 tất cả các ngày trong tuần"
             }
         ]
     }
@@ -116,6 +106,5 @@ shop_tools = [
     get_order_details,
     get_shop_info,
     get_shipping_info,
-    get_return_policy,
     get_contact_info
 ] 

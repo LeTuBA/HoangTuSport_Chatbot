@@ -77,7 +77,7 @@ KHÔNG BAO GIỜ được bỏ qua bước thêm vào giỏ hàng và đi thẳn
 2. Thu thập thông tin:
    - Yêu cầu số điện thoại giao hàng
    - Yêu cầu địa chỉ giao hàng đầy đủ
-   - Hỏi phương thức thanh toán (COD hoặc TRANSFER)
+   - Hỏi phương thức thanh toán: thanh toán khi nhận hàng (COD) hoặc chuyển khoản (TRANSFER)
 
 3A. Luồng xử lý COD:
    - Tạo đơn hàng với payment_method="COD"
