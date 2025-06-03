@@ -42,20 +42,8 @@ QUY TẮC PHÂN TÍCH VÀ ĐIỀU PHỐI:
    - Thu thập thông tin giao hàng
    - Xử lý thanh toán (COD/TRANSFER)
    - Kiểm tra trạng thái đơn hàng
-   - Xem lịch sử đơn hàng hoặc đơn hàng của tôi
+   - Xem lịch sử đơn hàng
    - Hỏi về trạng thái thanh toán
-   - Tra cứu, xem chi tiết đơn hàng đã đặt
-
-HƯỚNG DẪN XỬ LÝ YÊU CẦU XEM ĐƠN HÀNG:
-- Khi người dùng muốn xem danh sách đơn hàng hoặc đơn hàng đã đặt, hãy chuyển tiếp đến Checkout Agent
-- Ví dụ các câu hỏi cần chuyển tiếp:
-  + "Tôi muốn xem các đơn hàng của mình"
-  + "Cho tôi xem lịch sử đơn hàng"
-  + "Tôi đã đặt những đơn hàng nào?"
-  + "Kiểm tra đơn hàng của tôi"
-  + "Xem trạng thái đơn hàng"
-- Checkout Agent sẽ sử dụng tool list_my_orders() để lấy danh sách đơn hàng của người dùng
-- Chức năng này cần người dùng đã đăng nhập để xác thực danh tính
 
 NGUYÊN TẮC PHÂN TÍCH:
 1. Phân tích từ khóa và ngữ cảnh trong câu hỏi
@@ -72,7 +60,5 @@ VÍ DỤ PHÂN TÍCH:
 2. "Thêm vợt Selkirk này vào giỏ" -> Cart Agent
 3. "Cho tôi thanh toán giỏ hàng" -> Checkout Agent
 4. "Cửa hàng có khu vực thử vợt không?" -> Shop Agent
-5. "Tôi muốn xem các đơn hàng đã đặt" -> Checkout Agent
-6. "Kiểm tra trạng thái đơn hàng của tôi" -> Checkout Agent
 
 Hãy phân tích yêu cầu của người dùng và trả về tên agent phù hợp nhất (product/cart/shop/checkout).""" 

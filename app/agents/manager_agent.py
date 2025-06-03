@@ -46,99 +46,85 @@ class ManagerAgentWrapper:
             tool_description="Chuyển câu hỏi cho chuyên gia cửa hàng khi khách hàng hỏi về cửa hàng"
         )
         
-        # Đảm bảo checkout_agent.agent đã được khởi tạo đúng cách
-        try:
-            self.checkout_handoff = checkout_agent.agent.as_tool(
-                tool_name="consult_checkout_expert",
-                tool_description="Chuyển câu hỏi cho chuyên gia thanh toán khi khách hàng muốn thanh toán, xem đơn hàng hoặc tạo đơn hàng"
-            )
-        except Exception as e:
-            print(f"Lỗi khi tạo checkout_handoff: {str(e)}")
-            # Fallback để tránh lỗi khi khởi tạo
-            self.checkout_handoff = None
+        self.checkout_handoff = checkout_agent.agent.as_tool(
+            tool_name="consult_checkout_expert",
+            tool_description="Chuyển câu hỏi cho chuyên gia thanh toán khi khách hàng muốn thanh toán hoặc tạo đơn hàng"
+        )
     
     async def _analyze_message(self, message: str, context: str = "") -> str:
         """
         Phân tích tin nhắn để xác định agent phù hợp
         """
-        try:
-            message_with_context = f"{context}{message}" if context else message
+        message_with_context = f"{context}{message}" if context else message
+        
+        analysis_hooks = CustomAgentHooks("Analyzer")
+        analysis_agent = Agent(
+            name="Analyzer",
+            instructions="""
+            Phân tích tin nhắn của người dùng và xác định nội dung thuộc loại nào:
+            1. product - Nếu liên quan đến sản phẩm, tìm kiếm, so sánh giá
+            2. cart - Nếu liên quan đến giỏ hàng, thêm/xóa sản phẩm
+            3. shop - Nếu liên quan đến thông tin cửa hàng
+            4. checkout - Nếu liên quan đến thanh toán, tạo đơn hàng
+            5. unknown - Nếu không rõ ràng
             
-            analysis_hooks = CustomAgentHooks("Analyzer")
-            analysis_agent = Agent(
-                name="Analyzer",
-                instructions="""
-                Phân tích tin nhắn của người dùng và xác định nội dung thuộc loại nào:
-                1. product - Nếu liên quan đến sản phẩm, tìm kiếm, so sánh giá
-                2. cart - Nếu liên quan đến giỏ hàng, thêm/xóa sản phẩm
-                3. shop - Nếu liên quan đến thông tin cửa hàng
-                4. checkout - Nếu liên quan đến thanh toán, tạo đơn hàng, xem đơn hàng
-                5. unknown - Nếu không rõ ràng
-                
-                Chỉ trả về một trong các giá trị trên, không thêm bất kỳ thông tin nào khác.
-                """,
-                model=settings.CHAT_MODEL,
-                tools=[],
-                hooks=analysis_hooks
-            )
-            
-            result = await Runner.run(analysis_agent, message_with_context)
-            return result.final_output.strip().lower()
-        except Exception as e:
-            print(f"Exception in manager_agent._analyze_message: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            # Trong trường hợp có lỗi, trả về "unknown" để sử dụng orchestrator chung
-            return "unknown"
+            Chỉ trả về một trong các giá trị trên, không thêm bất kỳ thông tin nào khác.
+            """,
+            model=settings.CHAT_MODEL,
+            tools=[],
+            hooks=analysis_hooks
+        )
+        
+        result = await Runner.run(analysis_agent, message_with_context)
+        return result.final_output.strip().lower()
 
     async def process(self, message: str, thread_id: str = None, user_id: str = None, auth_token: str = None):
-        try:
-            # Cập nhật token xác thực cho spring_boot_client nếu có
-            spring_boot_client.update_auth_token(auth_token)
-            
-            # Phân tích tin nhắn
-            analysis_result = await self._analyze_message(message)
-            
-            # Chuyển tiếp dựa trên kết quả phân tích
-            if analysis_result == "product":
-                return {
-                    "handoff": True,
-                    "target_agent": "product",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            elif analysis_result == "cart":
-                return {
-                    "handoff": True,
-                    "target_agent": "cart",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            elif analysis_result == "shop":
-                return {
-                    "handoff": True,
-                    "target_agent": "shop",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            elif analysis_result == "checkout":
-                return {
-                    "handoff": True,
-                    "target_agent": "checkout",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            
-            # Nếu không rõ ràng, sử dụng orchestrator
-            orchestrator = Agent(
+        # Cập nhật token xác thực cho spring_boot_client nếu có
+        spring_boot_client.update_auth_token(auth_token)
+        
+        # Phân tích tin nhắn
+        analysis_result = await self._analyze_message(message)
+        
+        # Chuyển tiếp dựa trên kết quả phân tích
+        if analysis_result == "product":
+            return {
+                "handoff": True,
+                "target_agent": "product",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        elif analysis_result == "cart":
+            return {
+                "handoff": True,
+                "target_agent": "cart",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        elif analysis_result == "shop":
+            return {
+                "handoff": True,
+                "target_agent": "shop",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        elif analysis_result == "checkout":
+            return {
+                "handoff": True,
+                "target_agent": "checkout",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        
+        # Nếu không rõ ràng, sử dụng orchestrator
+        orchestrator = Agent(
             name="Orchestrator",
             instructions=MANAGER_AGENT_PROMPT,
             model=settings.CHAT_MODEL,
@@ -152,24 +138,13 @@ class ManagerAgentWrapper:
             hooks=self.hooks
         )
         
-            
-            result = await Runner.run(orchestrator, message)
-            
-            return {
-                "message": result.final_output,
-                "source_documents": [],
-                "thread_id": thread_id
-            }
-        except Exception as e:
-            print(f"Exception in manager_agent.process: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            # Trả về thông báo lỗi để tránh lỗi 500
-            return {
-                "message": "Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.",
-                "source_documents": [],
-                "thread_id": thread_id
-            }
+        result = await Runner.run(orchestrator, message)
+        
+        return {
+            "message": result.final_output,
+            "source_documents": [],
+            "thread_id": thread_id
+        }
     
     async def process_with_history(
         self, 
@@ -192,100 +167,83 @@ class ManagerAgentWrapper:
         Returns:
             Dict: Kết quả từ agent
         """
-        try:
-            # Cập nhật token xác thực cho spring_boot_client nếu có
-            spring_boot_client.update_auth_token(auth_token)
+        # Cập nhật token xác thực cho spring_boot_client nếu có
+        spring_boot_client.update_auth_token(auth_token)
+        
+        # Chuẩn bị ngữ cảnh
+        context = ""
+        if conversation_history and len(conversation_history) > 0:
+            context = "Đây là lịch sử trò chuyện trước đó:\n"
+            for msg in conversation_history:
+                role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
+                context += f"{role}: {msg['content']}\n"
+            context += "\nDựa vào lịch sử trên, hãy trả lời tin nhắn mới này:\n"
+        
+        # Phân tích tin nhắn với ngữ cảnh
+        analysis_result = await self._analyze_message(message, context)
+        
+        # Chuyển tiếp dựa trên kết quả phân tích
+        if analysis_result == "product":
+            return {
+                "handoff": True,
+                "target_agent": "product",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        elif analysis_result == "cart":
+            return {
+                "handoff": True,
+                "target_agent": "cart",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        elif analysis_result == "shop":
+            return {
+                "handoff": True,
+                "target_agent": "shop",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
+        elif analysis_result == "checkout":
+            return {
+                "handoff": True,
+                "target_agent": "checkout",
+                "original_message": message,
+                "thread_id": thread_id,
+                "user_id": user_id,
+                "auth_token": auth_token
+            }
             
-            # Chuẩn bị ngữ cảnh
-            context = ""
-            if conversation_history and len(conversation_history) > 0:
-                context = "Đây là lịch sử trò chuyện trước đó:\n"
-                for msg in conversation_history:
-                    role = "Người dùng" if msg["role"] == "user" else "Trợ lý"
-                    context += f"{role}: {msg['content']}\n"
-                context += "\nDựa vào lịch sử trên, hãy trả lời tin nhắn mới này:\n"
-            
-            # Phân tích tin nhắn với ngữ cảnh
-            analysis_result = await self._analyze_message(message, context)
-            
-            # Chuyển tiếp dựa trên kết quả phân tích
-            if analysis_result == "product":
-                return {
-                    "handoff": True,
-                    "target_agent": "product",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            elif analysis_result == "cart":
-                return {
-                    "handoff": True,
-                    "target_agent": "cart",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            elif analysis_result == "shop":
-                return {
-                    "handoff": True,
-                    "target_agent": "shop",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-            elif analysis_result == "checkout":
-                return {
-                    "handoff": True,
-                    "target_agent": "checkout",
-                    "original_message": message,
-                    "thread_id": thread_id,
-                    "user_id": user_id,
-                    "auth_token": auth_token
-                }
-                
-            # Nếu không rõ ràng, sử dụng orchestrator với ngữ cảnh
-            message_with_context = f"{context}{message}" if context else message
-            
-            # Tạo danh sách tools cho orchestrator
-            tools = [
+        # Nếu không rõ ràng, sử dụng orchestrator với ngữ cảnh
+        message_with_context = f"{context}{message}" if context else message
+        
+        orchestrator = Agent(
+            name="Orchestrator",
+            instructions=MANAGER_AGENT_PROMPT,
+            model=settings.CHAT_MODEL,
+            tools=[
                 get_assistant_info,
                 self.product_handoff,
                 self.cart_handoff,
-                self.shop_handoff
-            ]
-            
-            # Thêm checkout_handoff nếu nó không phải None
-            if self.checkout_handoff is not None:
-                tools.append(self.checkout_handoff)
-            
-            orchestrator = Agent(
-                name="Orchestrator",
-                instructions=MANAGER_AGENT_PROMPT,
-                model=settings.CHAT_MODEL,
-                tools=tools,
-                hooks=self.hooks
-            )
-            
-            result = await Runner.run(orchestrator, message_with_context)
-            
-            return {
-                "message": result.final_output,
-                "source_documents": [],
-                "thread_id": thread_id
-            }
-        except Exception as e:
-            print(f"Exception in manager_agent.process_with_history: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            # Trả về thông báo lỗi để tránh lỗi 500
-            return {
-                "message": "Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.",
-                "source_documents": [],
-                "thread_id": thread_id
-            }
+                self.shop_handoff,
+                self.checkout_handoff
+            ],
+            hooks=self.hooks
+        )
+        
+        result = await Runner.run(orchestrator, message_with_context)
+        
+        return {
+            "message": result.final_output,
+            "source_documents": [],
+            "thread_id": thread_id
+        }
 
 # Singleton instance
 manager_agent = ManagerAgentWrapper() 
