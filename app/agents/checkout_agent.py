@@ -11,52 +11,6 @@ from ..client.spring_client import spring_boot_client
 from typing import List, Dict, Any, Optional
 import json
 
-@function_tool
-def get_product_details(product_id: str) -> str:
-    """
-    Lấy thông tin chi tiết của sản phẩm
-    
-    Args:
-        product_id: ID của sản phẩm
-    """
-    result = get_product_by_id(product_id)
-    return json.dumps(result)
-
-@function_tool
-def get_order_details(order_id: str) -> str:
-    """
-    Lấy thông tin chi tiết của đơn hàng
-    
-    Args:
-        order_id: ID của đơn hàng
-    """
-    result = get_order_info(order_id)
-    return json.dumps(result)
-
-@function_tool
-def get_payment_details(order_id: str) -> str:
-    """
-    Lấy thông tin thanh toán của đơn hàng
-    
-    Args:
-        order_id: ID của đơn hàng
-    """
-    result = get_payment_info(order_id)
-    return json.dumps(result)
-
-@function_tool
-def list_my_orders() -> str:
-    """
-    Lấy danh sách đơn hàng của người dùng
-    """
-    try:
-        # Sử dụng spring_boot_client trực tiếp thay vì gọi get_my_orders()
-        result = spring_boot_client.get_my_orders()
-        return json.dumps(result)
-    except Exception as e:
-        print(f"Lỗi khi lấy danh sách đơn hàng: {str(e)}")
-        return json.dumps({"error": str(e), "orders": []})
-
 class CheckoutAgentWrapper:
     """
     Agent xử lý quá trình thanh toán và tạo đơn hàng
@@ -72,11 +26,11 @@ class CheckoutAgentWrapper:
             model=settings.CHAT_MODEL,
             tools=[
                 get_cart,             # Sử dụng trực tiếp get_cart từ cart_tools
-                get_product_details,  # Lấy thông tin sản phẩm
+                get_product_by_id,  # Lấy thông tin sản phẩm
                 create_order,         # Sử dụng trực tiếp create_order từ cart_tools
-                get_order_details,    # Lấy thông tin đơn hàng
-                get_payment_details,  # Lấy thông tin thanh toán
-                list_my_orders        # Lấy danh sách đơn hàng của tôi
+                get_order_info,    # Lấy thông tin đơn hàng
+                get_payment_info,  # Lấy thông tin thanh toán
+                get_my_orders        # Lấy danh sách đơn hàng của tôi
             ],
             hooks=self.hooks
         )
