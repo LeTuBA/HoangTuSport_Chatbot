@@ -10,6 +10,7 @@ from ..core.hooks import CustomAgentHooks
 from ..client.spring_client import spring_boot_client
 from typing import List, Dict, Any, Optional
 import json
+import traceback
 
 class CheckoutAgentWrapper:
     """
@@ -25,9 +26,9 @@ class CheckoutAgentWrapper:
             instructions=CHECKOUT_AGENT_PROMPT,
             model=settings.CHAT_MODEL,
             tools=[
-                get_cart,             # Sử dụng trực tiếp get_cart từ cart_tools
+                get_cart,             # Lấy thông tin giỏ hàng
                 get_product_by_id,    # Lấy thông tin sản phẩm
-                create_order,         # Sử dụng trực tiếp create_order từ cart_tools
+                create_order,         # Tạo đơn hàng mới
                 get_order_info,       # Lấy thông tin đơn hàng
                 get_payment_info,     # Lấy thông tin thanh toán
                 get_my_orders         # Lấy danh sách đơn hàng của tôi
@@ -76,6 +77,28 @@ class CheckoutAgentWrapper:
             # Trả về False trong trường hợp có lỗi xảy ra
             return False
     
+    def _extract_order_data_from_result(self, result) -> List[Dict[str, Any]]:
+        """
+        Trích xuất thông tin đơn hàng từ kết quả của agent
+        
+        Args:
+            result: Kết quả từ agent
+            
+        Returns:
+            List[Dict]: Danh sách thông tin đơn hàng
+        """
+        source_documents = []
+        if hasattr(result, 'tool_calls'):
+            for tool_call in result.tool_calls:
+                if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
+                    try:
+                        order_data = json.loads(tool_call.output)
+                        if isinstance(order_data, dict) or isinstance(order_data, list):
+                            source_documents.append(order_data)
+                    except Exception as e:
+                        print(f"Error parsing tool output: {e}")
+        return source_documents
+    
     async def process(self, message: str, thread_id: str = None, user_id: str = None, auth_token: str = None):
         """
         Xử lý tin nhắn liên quan đến thanh toán
@@ -121,17 +144,8 @@ class CheckoutAgentWrapper:
             # Sử dụng Runner để xử lý tin nhắn
             result = await Runner.run(self.agent, message)
             
-            # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
-            source_documents = []
-            if hasattr(result, 'tool_calls'):
-                for tool_call in result.tool_calls:
-                    if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
-                        try:
-                            order_data = json.loads(tool_call.output)
-                            if isinstance(order_data, dict) or isinstance(order_data, list):
-                                source_documents.append(order_data)
-                        except Exception as e:
-                            print(f"Error parsing tool output: {e}")
+            # Trích xuất thông tin đơn hàng từ kết quả
+            source_documents = self._extract_order_data_from_result(result)
             
             return {
                 "message": result.final_output,
@@ -140,7 +154,6 @@ class CheckoutAgentWrapper:
             }
         except Exception as e:
             print(f"Exception in checkout_agent.process: {str(e)}")
-            import traceback
             traceback.print_exc()
             # Trả về một thông báo lỗi để tránh lỗi 500
             return {
@@ -178,9 +191,10 @@ class CheckoutAgentWrapper:
             # Kiểm tra nếu tin nhắn liên quan đến việc xem đơn hàng
             is_order_query = await self._is_order_related_query(message)
             
-            # Nếu không phải truy vấn về đơn hàng, kiểm tra giỏ hàng trước khi xử lý
-            if not is_order_query:
-                # Kiểm tra giỏ hàng trước khi xử lý
+            if is_order_query:
+                print(f"Checkout Agent (with history) - Processing order-related query: {message}")
+            else:
+                # Kiểm tra giỏ hàng chỉ khi không phải query về đơn hàng
                 cart = spring_boot_client.get_cart()
                 print(f"Checkout Agent (with history) - Get Cart Result: {cart}")
                 
@@ -199,8 +213,6 @@ class CheckoutAgentWrapper:
                         "source_documents": [],
                         "thread_id": thread_id
                     }
-            else:
-                print(f"Checkout Agent (with history) - Processing order-related query: {message}")
             
             # Chuẩn bị ngữ cảnh từ lịch sử trò chuyện
             context = ""
@@ -217,17 +229,8 @@ class CheckoutAgentWrapper:
             # Sử dụng Runner để xử lý tin nhắn
             result = await Runner.run(self.agent, message_with_context)
             
-            # Nếu có order_id trong kết quả, thêm thông tin đơn hàng vào source_documents
-            source_documents = []
-            if hasattr(result, 'tool_calls'):
-                for tool_call in result.tool_calls:
-                    if tool_call.name in ['create_order', 'get_order_info', 'get_payment_info', 'get_my_orders']:
-                        try:
-                            order_data = json.loads(tool_call.output)
-                            if isinstance(order_data, dict) or isinstance(order_data, list):
-                                source_documents.append(order_data)
-                        except Exception as e:
-                            print(f"Error parsing tool output: {e}")
+            # Trích xuất thông tin đơn hàng từ kết quả
+            source_documents = self._extract_order_data_from_result(result)
             
             return {
                 "message": result.final_output,
@@ -236,7 +239,6 @@ class CheckoutAgentWrapper:
             }
         except Exception as e:
             print(f"Exception in checkout_agent.process_with_history: {str(e)}")
-            import traceback
             traceback.print_exc()
             # Trả về một thông báo lỗi để tránh lỗi 500
             return {
